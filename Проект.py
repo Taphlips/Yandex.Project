@@ -1,69 +1,60 @@
 # импорт необходимых модулей
 import pygame
+import os
+
+
+def load_image(name, colorkey=None):
+    fullname = os.path.join('data', name)
+
+    try:
+        image = pygame.image.load(fullname)
+    except pygame.error as message:
+        print('Ошибка', name)
+        raise SystemExit(message)
+
+    if colorkey is not None:
+        if colorkey == -1:
+            colorkey = image.get_at((0, 0))
+        image = image.convert()
+        image.set_colorkey(colorkey)
+    else:
+
+        image = image.convert_alpha()
+    return image
+
 
 # класс меню перед игрой
-class Menu():
+class Menu:
     def __init__(self, width, height):
-        self.top = height // 10
-        self.left = width // 10
-        self.length = width // 5
-        self.size = height // 5
-        self.height = 3
-        self.bns = ['Play', 'Options', 'Exit']
-        self.extra()
+        self.width = width
+        self.height = height
+        self.intro_text = ["YANDEX.GAME", "", "",
+                           "Start new game", "",
+                           "Options", "",
+                           "Exit"]
 
-    def get_button(self, mouse_pos):
-        for elem in self.buttons:
-            first = elem[0]
-            second = elem[1]
-            third = elem[2]
-            forth = elem[3]
-            if first <= mouse_pos[0] <= third and second <= mouse_pos[1] <= forth:
-                num = self.buttons.index(elem)
-                return num
+        self.fon = pygame.transform.scale(load_image('fon.jpg'), (self.width, self.height))
+        screen.blit(self.fon, (0, 0))
+        self.text_render()
 
-    def on_click(self, button_coords):
-        if button_coords is not None:
-            val = self.bns[button_coords]
-            print(val)
-
-    def get_click(self, mouse_pos):
-        btn = self.get_button(mouse_pos)
-        self.on_click(btn)
-
-    def extra(self):
-        self.buttons = []
-        second = self.top + self.size
-        third = self.left + self.length
-        forth = second + self.size
-        num = 0
-        for i in range(self.height):
-            # список с координатами "кнопок"
-            self.buttons.append((int(self.left * 3.5), second - self.size // 2,
-                                 int(third * 3.5), forth - self.size // 2))
-            if num == 0:
-                txt = 'Play'
-            elif num == 1:
-                txt = 'Options'
-            elif num == 2:
-                txt = 'Exit'
-            # рисование "кнопок"
-            fontObj = pygame.font.Font(None, 100)
-            textSurfaceObj = fontObj.render(txt, True, (255, 0, 0, 0))
-            textRectObj = textSurfaceObj.get_rect()
-            textRectObj.center = (self.left * 5, second)
-            screen.blit(textSurfaceObj, textRectObj)
-
-            second += self.size
-            forth += self.size
-            num += 1
-
+    def text_render(self):
+        font = pygame.font.Font(None, 100)
+        text_coord = 100
+        for line in self.intro_text:
+            string_rendered = font.render(line, 1, pygame.Color('black'))
+            intro_rect = string_rendered.get_rect()
+            text_coord += 2
+            intro_rect.top = text_coord
+            intro_rect.center = self.width // 2, intro_rect.top
+            text_coord += intro_rect.height
+            screen.blit(string_rendered, intro_rect)
 
 
 # инициализация pygame
 pygame.init()
+
 pygame.display.set_caption('Без названия')
-screen = pygame.display.set_mode((0,0), pygame.FULLSCREEN)
+screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 surface = pygame.display.get_surface()
 x, y = surface.get_width(), surface.get_height()
 screen.fill((0, 0, 0))
@@ -72,12 +63,8 @@ menu = Menu(x, y)
 
 while running:
     for event in pygame.event.get():
-        if event.type == pygame.KEYDOWN:
-            # выход из игры на кнопку Esc(Escape)
-            if event.key == 27:
-                running = False
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:
-                menu.get_click(event.pos)
+        key = pygame.key.get_pressed()
+        if key[pygame.K_ESCAPE]:
+            running = False
     pygame.display.flip()
 pygame.quit()
