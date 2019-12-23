@@ -75,13 +75,6 @@ class Menu:
         self.exit_button = Button(800, 500, 70, 300, 'Выход')
 
     def start(self):
-        # Название игры вверху экрана
-        font = pygame.font.Font(None, 150)
-        string_rendered = font.render('YANDEX.GAME', 1, pygame.Color('black'))
-        intro_rect = string_rendered.get_rect()
-        intro_rect.center = self.width // 2, 100
-        screen.blit(string_rendered, intro_rect)
-
         # Основной цико меню
         menu_running = True
         while menu_running:
@@ -98,17 +91,25 @@ class Menu:
                         # по кнопке "Настройки" (тут пока ничего нет)
                         elif (self.options_button.x < mp[0] < self.options_button.x + self.options_button.width and
                                 self.options_button.y < mp[1] < self.options_button.y + self.options_button.height):
-                            pass
+                            # изменение
+                            screen.fill((255, 255, 255))
+                            options.start()
                         # по кнопке "Играть" (выйдет из цикла меню и войдет в основной цикл с игрой)
                         elif (self.start_button.x < mp[0] < self.start_button.x + self.start_button.width and
                                 self.start_button.y < mp[1] < self.start_button.y + self.start_button.height):
                             return
+            # Название игры вверху экрана
+            # изменение
+            font = pygame.font.Font(None, 150)
+            string_rendered = font.render('YANDEX.GAME', 1, pygame.Color('black'))
+            intro_rect = string_rendered.get_rect()
+            intro_rect.center = self.width // 2, 100
+            screen.blit(string_rendered, intro_rect)
             self.start_button.draw()
             self.options_button.draw()
             self.exit_button.draw()
             pygame.display.flip()
             clock.tick(FPS)
-
 
 # Пока тестовый класс настроек
 class Options:
@@ -132,6 +133,8 @@ class Options:
             mp = pygame.mouse.get_pos()
             for event in pygame.event.get():
                 if event.type == pygame.KEYDOWN:
+                    # изменение
+                    screen.fill((255, 255, 255))
                     return
             self.btn.draw()
             pygame.display.flip()
