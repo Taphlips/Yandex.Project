@@ -160,6 +160,7 @@ class Play:
                         game_running = False
                         terminate()
                     elif event.key == 32:
+                        # прыжок на пробел
                         flag = True
                         pos = 0
             self.game_draw()
@@ -175,15 +176,19 @@ class Play:
             pygame.display.flip()
 
     def game_draw(self):
+        # обновление фона
         screen.fill(pygame.Color('aquamarine'), pygame.Rect(0, 0, self.width, self.height // 15 * 14))
         screen.fill(pygame.Color('peru'), pygame.Rect(0, self.height // 15 * 14, self.width, self.height))
         pygame.draw.circle(screen, pygame.Color('yellow'), (self.width // 15 * 13, self.height // 15 * 2),
                            self.height // 10)
+        # отрисовка героя
         all_sprites.draw(screen)
+        # движение героя
         Character.move(hero)
 
 
 # инициализация pygame
+# перенёс сюда, чтобы сделать возможным использование спрайта в строке 205
 pygame.init()
 
 pygame.display.set_caption('Без названия')
@@ -194,23 +199,26 @@ screen.fill((255, 255, 255))
 clock = pygame.time.Clock()
 FPS = 50
 
-
+# класс персонажа
 class Character(sprite.Sprite):
-    image = pygame.transform.scale(load_image('Пробник.png'), (100, 100))
+    # установка спрайта
+    image = pygame.transform.scale(load_image('Probnik.png'), (100, 100))
+    # зеркалю картинку(просто пример не в ту сторону)
+    image = pygame.transform.flip(image, True, False)
 
     def __init__(self, skin, width, height):
         super().__init__(skin)
         self.image = Character.image
         self.rect = self.image.get_rect()
         self.rect.x = 100
-        self.rect.y = height - (height // 15) - 102
+        self.rect.y = height - (height // 15) * 3 + 5
 
     def move(self):
         self.rect.x += 1
-
+    # прыжок
     def jump(self):
         self.rect.y -= 1
-
+    # падение
     def fall(self):
         self.rect.y += 1
 
