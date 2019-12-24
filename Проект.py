@@ -2,6 +2,7 @@
 import pygame
 import sys
 import os
+from pygame import sprite
 
 
 def load_image(name, colorkey=None):
@@ -19,7 +20,6 @@ def load_image(name, colorkey=None):
         image = image.convert()
         image.set_colorkey(colorkey)
     else:
-
         image = image.convert_alpha()
     return image
 
@@ -86,8 +86,7 @@ class Menu:
                         # по кнопке "Выход"
                         if (self.exit_button.x < mp[0] < self.exit_button.x + self.exit_button.width and
                                 self.exit_button.y < mp[1] < self.exit_button.y + self.exit_button.height):
-                            pygame.quit()
-                            sys.exit()
+                            terminate()
                         # по кнопке "Настройки" (тут пока ничего нет)
                         elif (self.options_button.x < mp[0] < self.options_button.x + self.options_button.width and
                                 self.options_button.y < mp[1] < self.options_button.y + self.options_button.height):
@@ -97,7 +96,7 @@ class Menu:
                         # по кнопке "Играть" (выйдет из цикла меню и войдет в основной цикл с игрой)
                         elif (self.start_button.x < mp[0] < self.start_button.x + self.start_button.width and
                                 self.start_button.y < mp[1] < self.start_button.y + self.start_button.height):
-                            return
+                            menu_running = False
             # Название игры вверху экрана
             # изменение
             font = pygame.font.Font(None, 150)
@@ -110,6 +109,8 @@ class Menu:
             self.exit_button.draw()
             pygame.display.flip()
             clock.tick(FPS)
+        screen.fill((255, 255, 255))
+        game.start()
 
 # Пока тестовый класс настроек
 class Options:
@@ -117,7 +118,7 @@ class Options:
         self.width = width
         self.height = height
 
-        self.btn = Button(800, 300, 70, 300, "Допустим тут настройка чего-то")
+        self.btn = Button(800, 300, 70, 300, "Просто")
 
     def start(self):
         # Надпись настройки
@@ -140,6 +141,47 @@ class Options:
             pygame.display.flip()
             clock.tick(FPS)
 
+# класс игры
+class Play:
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+
+    def start(self):
+        flag = 0
+        pygame.display.flip()
+        game_running = True
+        while game_running:
+            for event in pygame.event.get():
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    pass
+                if event.type == pygame.KEYDOWN:
+                    if event.key == 27:
+                        game_running = False
+                        terminate()
+                    elif event.key == 32:
+                        flag = True
+                        pos = 0
+            self.game_draw()
+            if flag:
+                if pos < 50:
+                    Character.jump(hero)
+                    pos += 1
+                elif pos < 100:
+                    Character.fall(hero)
+                    pos += 1
+                else:
+                    flag = False
+            pygame.display.flip()
+
+    def game_draw(self):
+        screen.fill(pygame.Color('aquamarine'), pygame.Rect(0, 0, self.width, self.height // 15 * 14))
+        screen.fill(pygame.Color('peru'), pygame.Rect(0, self.height // 15 * 14, self.width, self.height))
+        pygame.draw.circle(screen, pygame.Color('yellow'), (self.width // 15 * 13, self.height // 15 * 2),
+                           self.height // 10)
+        all_sprites.draw(screen)
+        Character.move(hero)
+
 
 # инициализация pygame
 pygame.init()
@@ -152,9 +194,35 @@ screen.fill((255, 255, 255))
 clock = pygame.time.Clock()
 FPS = 50
 
+
+class Character(sprite.Sprite):
+    image = pygame.transform.scale(load_image('Пробник.png'), (100, 100))
+
+    def __init__(self, skin, width, height):
+        super().__init__(skin)
+        self.image = Character.image
+        self.rect = self.image.get_rect()
+        self.rect.x = 100
+        self.rect.y = height - (height // 15) - 102
+
+    def move(self):
+        self.rect.x += 1
+
+    def jump(self):
+        self.rect.y -= 1
+
+    def fall(self):
+        self.rect.y += 1
+
+
 running = True
 options = Options(x, y)
 menu = Menu(x, y)
+game = Play(x, y)
+
+all_sprites = sprite.Group()
+
+hero = Character(all_sprites, x, y)
 menu.start()
 
 # Основной цикл (тут будет игра (пока зеленый фон))
@@ -163,6 +231,5 @@ while running:
         key = pygame.key.get_pressed()
         if key[pygame.K_ESCAPE]:
             running = False
-    screen.fill((0, 255, 0))
     pygame.display.flip()
 pygame.quit()
