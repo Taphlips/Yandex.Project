@@ -31,8 +31,11 @@ def terminate():
 
 # Класс, создающий кнопку в указанный координатах
 class Button:
-    def __init__(self,x, y, height, width, text):
+    def __init__(self, image, image_act,  screen, x, y, height, width, text):
         self.x = x
+        self.image = image
+        self.image_act = image_act
+        self.screen = screen
         self.y = y
         self.height = height
         self.width = width
@@ -42,26 +45,26 @@ class Button:
         mp = pygame.mouse.get_pos()
 
         # Фон кнопки
-        fon_image = pygame.transform.scale(load_image('start_menu_button.png'), (self.width, self.height))
-        screen.blit(fon_image, (self.x, self.y))
+        fon_image = pygame.transform.scale(load_image(self.image), (self.width, self.height))
+        self.screen.blit(fon_image, (self.x, self.y))
 
         # Надпись на кнопке
         font = pygame.font.SysFont('comicsans', 60)
         text = font.render(self.text, 1, (0, 0, 0))
-        screen.blit(text, (
+        self.screen.blit(text, (
             self.x + (self.width / 2 - text.get_width() / 2), self.y + (self.height / 2 - text.get_height() / 2)))
 
         # Если позиция курсора на кнопке, то фон меняется на другую картинку (в данном случае голубая кнопка)
         if self.x < mp[0] < self.x + self.width and self.y < mp[1] < self.y + self.height:
-            fon_image = pygame.transform.scale(load_image('menu_button_selected.png'), (self.width, self.height))
-            screen.blit(fon_image, (self.x, self.y))
-            screen.blit(text, (
+            fon_image = pygame.transform.scale(load_image(self.image_act), (self.width, self.height))
+            self.screen.blit(fon_image, (self.x, self.y))
+            self.screen.blit(text, (
                 self.x + (self.width / 2 - text.get_width() / 2), self.y + (self.height / 2 - text.get_height() / 2)))
 
         else:
-            fon_image = pygame.transform.scale(load_image('start_menu_button.png'), (self.width, self.height))
-            screen.blit(fon_image, (self.x, self.y))
-            screen.blit(text, (
+            fon_image = pygame.transform.scale(load_image(self.image), (self.width, self.height))
+            self.screen.blit(fon_image, (self.x, self.y))
+            self.screen.blit(text, (
                 self.x + (self.width / 2 - text.get_width() / 2), self.y + (self.height / 2 - text.get_height() / 2)))
 
 
@@ -70,12 +73,12 @@ class Menu:
     def __init__(self, width, height):
         self.width = width
         # Создание кнопок с помощью класса Button
-        self.start_button = Button(800, 300, 70, 300, 'Играть')
-        self.options_button = Button(800, 400, 70, 300, 'Настройки')
-        self.exit_button = Button(800, 500, 70, 300, 'Выход')
+        self.start_button = Button('menu_btn.png', 'menu_btn_act.png', menu_screen, 800, 300, 70, 300, 'Играть')
+        self.options_button = Button('menu_btn.png', 'menu_btn_act.png', menu_screen, 800, 400, 70, 300, 'Настройки')
+        self.exit_button = Button('menu_btn.png', 'menu_btn_act.png', menu_screen, 800, 500, 70, 300, 'Выход')
 
     def start(self):
-        # Основной цико меню
+        # Основной цикл меню
         menu_running = True
         while menu_running:
             mp = pygame.mouse.get_pos()
@@ -87,59 +90,64 @@ class Menu:
                         if (self.exit_button.x < mp[0] < self.exit_button.x + self.exit_button.width and
                                 self.exit_button.y < mp[1] < self.exit_button.y + self.exit_button.height):
                             terminate()
-                        # по кнопке "Настройки" (тут пока ничего нет)
+                        # по кнопке "Настройки" выполнит запуск настроек
                         elif (self.options_button.x < mp[0] < self.options_button.x + self.options_button.width and
                                 self.options_button.y < mp[1] < self.options_button.y + self.options_button.height):
-                            # изменение
-                            screen.fill((255, 255, 255))
                             options.start()
                         # по кнопке "Играть" (выйдет из цикла меню и войдет в основной цикл с игрой)
                         elif (self.start_button.x < mp[0] < self.start_button.x + self.start_button.width and
                                 self.start_button.y < mp[1] < self.start_button.y + self.start_button.height):
                             menu_running = False
             # Название игры вверху экрана
-            # изменение
             font = pygame.font.Font(None, 150)
             string_rendered = font.render('YANDEX.GAME', 1, pygame.Color('black'))
             intro_rect = string_rendered.get_rect()
             intro_rect.center = self.width // 2, 100
-            screen.blit(string_rendered, intro_rect)
+            menu_screen.blit(string_rendered, intro_rect)
             self.start_button.draw()
             self.options_button.draw()
             self.exit_button.draw()
             pygame.display.flip()
             clock.tick(FPS)
-        screen.fill((255, 255, 255))
+        menu_screen.fill((255, 255, 255))
         game.start()
 
-# Пока тестовый класс настроек
+
+# Класс настроек
 class Options:
     def __init__(self, width, height):
         self.width = width
         self.height = height
-
-        self.btn = Button(800, 300, 70, 300, "Просто")
+        self.back_to_menu = Button('yellow_back_btn.png', 'blue_back_btn.png', options_screen, 600, 75, 49, 49, "<")
 
     def start(self):
-        # Надпись настройки
-        font = pygame.font.Font(None, 150)
-        string_rendered = font.render('НАСТРОЙКИ', 1, pygame.Color('black'))
-        intro_rect = string_rendered.get_rect()
-        intro_rect.center = self.width // 2, 100
-        screen.blit(string_rendered, intro_rect)
+        menu_screen.fill((255, 255, 255))
 
         # Цикл настроек
         options_running = True
         while options_running:
             mp = pygame.mouse.get_pos()
             for event in pygame.event.get():
-                if event.type == pygame.KEYDOWN:
-                    # изменение
-                    screen.fill((255, 255, 255))
-                    return
-            self.btn.draw()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    # Если нажать ЛКМ
+                    if event.button == 1:
+                        # по кнопке "<" холст настроек переключается на холст меню
+                        if (self.back_to_menu.x < mp[0] < self.back_to_menu.x + self.back_to_menu.width and
+                                self.back_to_menu.y < mp[1] < self.back_to_menu.y + self.back_to_menu.height):
+                            # Само переключение:
+                            menu_screen.fill((255, 255, 255))
+                            options_screen.blit(menu_screen, (0, 0))
+                            return
+            font = pygame.font.Font(None, 150)
+            string_rendered = font.render('OPTIONS', 1, pygame.Color('black'))
+            intro_rect = string_rendered.get_rect()
+            intro_rect.center = self.width // 2, 100
+            options_screen.blit(string_rendered, intro_rect)
+            self.back_to_menu.draw()
+            menu_screen.blit(options_screen, (0, 0))
             pygame.display.flip()
             clock.tick(FPS)
+
 
 # класс игры
 class Play:
@@ -177,12 +185,12 @@ class Play:
 
     def game_draw(self):
         # обновление фона
-        screen.fill(pygame.Color('aquamarine'), pygame.Rect(0, 0, self.width, self.height // 15 * 14))
-        screen.fill(pygame.Color('peru'), pygame.Rect(0, self.height // 15 * 14, self.width, self.height))
-        pygame.draw.circle(screen, pygame.Color('yellow'), (self.width // 15 * 13, self.height // 15 * 2),
+        menu_screen.fill(pygame.Color('aquamarine'), pygame.Rect(0, 0, self.width, self.height // 15 * 14))
+        menu_screen.fill(pygame.Color('peru'), pygame.Rect(0, self.height // 15 * 14, self.width, self.height))
+        pygame.draw.circle(menu_screen, pygame.Color('yellow'), (self.width // 15 * 13, self.height // 15 * 2),
                            self.height // 10)
         # отрисовка героя
-        all_sprites.draw(screen)
+        all_sprites.draw(menu_screen)
         # движение героя
         Character.move(hero)
 
@@ -191,13 +199,21 @@ class Play:
 # перенёс сюда, чтобы сделать возможным использование спрайта в строке 205
 pygame.init()
 
-pygame.display.set_caption('Без названия')
-screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+# Название окна
+pygame.display.set_caption('YANDEX.GAME')
+
+# Холст, на котором будет рисоваться меню
+menu_screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+menu_screen.fill((255, 255, 255))
+# Холст, на котором будут рисоваться настройки
+options_screen = pygame.Surface(menu_screen.get_size())
+options_screen.fill((255, 255, 255))
+
 surface = pygame.display.get_surface()
 x, y = surface.get_width(), surface.get_height()
-screen.fill((255, 255, 255))
 clock = pygame.time.Clock()
 FPS = 50
+
 
 # класс персонажа
 class Character(sprite.Sprite):
@@ -215,9 +231,11 @@ class Character(sprite.Sprite):
 
     def move(self):
         self.rect.x += 1
+
     # прыжок
     def jump(self):
         self.rect.y -= 1
+
     # падение
     def fall(self):
         self.rect.y += 1
