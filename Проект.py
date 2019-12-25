@@ -4,6 +4,9 @@ import sys
 import os
 from pygame import sprite
 
+# инициализация pygame
+pygame.init()
+
 
 def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
@@ -194,10 +197,6 @@ class Play:
         # движение героя
         Character.move(hero)
 
-
-# инициализация pygame
-# перенёс сюда, чтобы сделать возможным использование спрайта в строке 205
-pygame.init()
 
 # Название окна
 pygame.display.set_caption('YANDEX.GAME')
