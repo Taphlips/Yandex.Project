@@ -159,6 +159,8 @@ class Play:
         self.height = height
 
     def start(self):
+        pos = 200
+        action = 'jump'
         flag = False
         pygame.display.flip()
         game_running = True
@@ -172,19 +174,35 @@ class Play:
                         terminate()
                     elif event.key == 32:
                         # прыжок на пробел
-                        if flag is False:
+                        if flag is False and pos == 200:
+                            action = 'jump'
                             flag = True
                             pos = 0
+                if event.type == pygame.KEYUP:
+                    # остановка прыжка
+                    if event.key == 32 and flag is True:
+                        flag = False
+                        if action == 'jump':
+                            action = 'fall'
+                            zn = 100 - pos
+                            pos = 100 + zn
+
             self.game_draw()
+            # прыжок
             if flag:
-                if pos < 50:
+                if pos < 100:
                     Character.jump(hero)
-                    pos += 1
-                elif pos < 100:
+                    pos += 2
+                elif pos < 200:
+                    action = 'fall'
                     Character.fall(hero)
-                    pos += 1
+                    pos += 2
                 else:
+                    action = 'stop'
                     flag = False
+            elif action == 'fall' and 100 <= pos < 200 and flag is False:
+                Character.fall(hero)
+                pos += 2
             pygame.display.flip()
 
     def game_draw(self):
@@ -223,19 +241,28 @@ class Camera:
         self.dx = -1
         self.dy = 0
 
-# класс препятсвий(тестовый)
+# класс препятствий(тестовый)
 class Obstacle:
     def __init__(self, width, height):
-        self.width = width
+        self.fi = width
+        self.width = width // 10
         self.height = height
-        self.num = 100
+        self.num = 0
 
     def move_obstacle(self):
-        self.width -= 1
-        self.num += 1
+        # 4 - скорость движения препятствий навстречу
+        if self.fi <= 0 and self.num > 0:
+            self.num -= 4
+        elif self.fi > 0 and x - self.fi < self.width:
+            self.fi -= 4
+            self.num += 4
+        elif self.num <= 0 and self.fi <= 0:
+            self.fi = x
+        else:
+            self.fi -= 4
 
     def draw_obstacle(self):
-        menu_screen.fill((255, 255, 255), pygame.Rect(self.width, self.height, self.width + self.num,
+        menu_screen.fill((255, 255, 255), pygame.Rect(self.fi, self.height, self.num,
                                                       self.height))
         self.move_obstacle()
 
@@ -263,7 +290,7 @@ FPS = 50
 # класс персонажа
 class Character(sprite.Sprite):
     # установка спрайта
-    image = pygame.transform.scale(load_image('Probnik.png'), (100, 100))
+    image = pygame.transform.scale(load_image('Probnik.png'), (200, 200))
     # зеркалю картинку(просто пример не в ту сторону)
     image = pygame.transform.flip(image, True, False)
 
@@ -272,18 +299,18 @@ class Character(sprite.Sprite):
         self.image = Character.image
         self.rect = self.image.get_rect()
         self.rect.x = 100
-        self.rect.y = height - (height // 15) * 3 + 5
+        self.rect.y = height - (height // 15) * 5 + 10
 
     def move(self):
         self.rect.x += 1
 
     # прыжок
     def jump(self):
-        self.rect.y -= 1
+        self.rect.y -= 2
 
     # падение
     def fall(self):
-        self.rect.y += 1
+        self.rect.y += 2
 
     def return_x(self):
         return self.rect.x
@@ -300,6 +327,6 @@ game = Play(x, y)
 all_sprites = sprite.Group()
 
 hero = Character(all_sprites, x, y)
-barrier = Obstacle(500, 200)
+barrier = Obstacle(x, 300)
 camera = Camera(x, y)
 menu.start()
