@@ -159,7 +159,7 @@ class Play:
         self.height = height
 
     def start(self):
-        flag = 0
+        flag = False
         pygame.display.flip()
         game_running = True
         while game_running:
@@ -172,8 +172,9 @@ class Play:
                         terminate()
                     elif event.key == 32:
                         # прыжок на пробел
-                        flag = True
-                        pos = 0
+                        if flag is False:
+                            flag = True
+                            pos = 0
             self.game_draw()
             if flag:
                 if pos < 50:
@@ -194,8 +195,53 @@ class Play:
                            self.height // 10)
         # отрисовка героя
         all_sprites.draw(menu_screen)
+        # отрисовка препятствий
+        Obstacle.draw_obstacle(barrier)
         # движение героя
         Character.move(hero)
+        # обновление камеры
+        camera.update(hero)
+        for sprite in all_sprites:
+            camera.apply(sprite)
+
+# класс Камеры
+class Camera:
+    # зададим начальный сдвиг камеры
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+        self.dx = 1
+        self.dy = 1
+
+    # сдвинуть объект obj на смещение камеры
+    def apply(self, obj):
+        obj.rect.x += self.dx
+        obj.rect.y += self.dy
+
+    # позиционировать камеру на объекте target
+    def update(self, target):
+        self.dx = -1
+        self.dy = 0
+
+# класс препятсвий(тестовый)
+class Obstacle:
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+        self.num = 100
+
+    def move_obstacle(self):
+        self.width -= 1
+        self.num += 1
+
+    def draw_obstacle(self):
+        menu_screen.fill((255, 255, 255), pygame.Rect(self.width, self.height, self.width + self.num,
+                                                      self.height))
+        self.move_obstacle()
+
+# будущий класс бонусов
+class Bonus(Obstacle):
+    pass
 
 
 # Название окна
@@ -239,6 +285,12 @@ class Character(sprite.Sprite):
     def fall(self):
         self.rect.y += 1
 
+    def return_x(self):
+        return self.rect.x
+
+    def return_y(self):
+        return self.rect.y
+
 
 running = True
 options = Options(x, y)
@@ -248,13 +300,6 @@ game = Play(x, y)
 all_sprites = sprite.Group()
 
 hero = Character(all_sprites, x, y)
+barrier = Obstacle(500, 200)
+camera = Camera(x, y)
 menu.start()
-
-# Основной цикл (тут будет игра (пока зеленый фон))
-while running:
-    for event in pygame.event.get():
-        key = pygame.key.get_pressed()
-        if key[pygame.K_ESCAPE]:
-            running = False
-    pygame.display.flip()
-pygame.quit()
