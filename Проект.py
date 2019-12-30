@@ -1,6 +1,7 @@
 # импорт необходимых модулей
 import pygame
 import sys
+import random
 import os
 from pygame import sprite
 
@@ -43,7 +44,7 @@ def restart(width, height):
 
 # Класс, создающий кнопку в указанный координатах
 class Button:
-    def __init__(self, image, image_act,  screen, x, y, height, width, text):
+    def __init__(self, image, image_act, screen, x, y, height, width, text):
         self.x = x
         self.image = image
         self.image_act = image_act
@@ -86,16 +87,16 @@ class Menu:
         self.width = width
         self.height = height
         # Создание кнопок с помощью класса Button
-        fi_pos = self.width // 10 * 4
-        increment = self.height // 10
-        se_pos = self.height // 10 * 4
-        self.start_button = Button('menu_btn.png', 'menu_btn_act.png', menu_screen, fi_pos, se_pos,
-                                      70, 300, 'Играть')
-        se_pos += increment
-        self.options_button = Button('menu_btn.png', 'menu_btn_act.png', menu_screen, fi_pos, se_pos,
+        x = self.width // 10 * 4
+        y = self.height // 10 * 4
+        delta_y = self.height // 10
+        self.start_button = Button('menu_btn.png', 'menu_btn_act.png', menu_screen, x, y,
+                                   70, 300, 'Играть')
+        y += delta_y
+        self.options_button = Button('menu_btn.png', 'menu_btn_act.png', menu_screen, x, y,
                                      70, 300, 'Настройки')
-        se_pos += increment
-        self.exit_button = Button('menu_btn.png', 'menu_btn_act.png', menu_screen, fi_pos, se_pos, 70, 300, 'Выход')
+        y += delta_y
+        self.exit_button = Button('menu_btn.png', 'menu_btn_act.png', menu_screen, x, y, 70, 300, 'Выход')
 
     def start(self):
         # Основной цикл меню
@@ -112,11 +113,11 @@ class Menu:
                             terminate()
                         # по кнопке "Настройки" выполнит запуск настроек
                         elif (self.options_button.x < mp[0] < self.options_button.x + self.options_button.width and
-                                self.options_button.y < mp[1] < self.options_button.y + self.options_button.height):
+                              self.options_button.y < mp[1] < self.options_button.y + self.options_button.height):
                             options.start()
                         # по кнопке "Играть" (выйдет из цикла меню и войдет в основной цикл с игрой)
                         elif (self.start_button.x < mp[0] < self.start_button.x + self.start_button.width and
-                                self.start_button.y < mp[1] < self.start_button.y + self.start_button.height):
+                              self.start_button.y < mp[1] < self.start_button.y + self.start_button.height):
                             menu_running = False
             # Название игры вверху экрана
             font = pygame.font.Font(None, 150)
@@ -227,6 +228,7 @@ class Play:
             else:
                 Game_Menu.draw_game_menu(game_menu)
             pygame.display.flip()
+            clock.tick(FPS)
 
     def game_draw(self):
         # обновление фона
@@ -236,18 +238,14 @@ class Play:
                            self.height // 10)
         # отрисовка героя
         all_sprites.draw(menu_screen)
-        # не очень удавшиеся столкновения
-        #move_flag = Character.disturb(hero, barrier., barrier.height, barrier.height * 2)
-        # движение героя
-        #if move_flag:
-            #Character.move(hero)
-        #else:
-            #Character.back(hero)
-        Character.move(hero)
+        hero.move()
         # обновление камеры
         camera.update(hero)
+        for i in all_barriers:
+            i.move_obstacle()
         for sprite in all_sprites:
             camera.apply(sprite)
+
 
 # класс Камеры
 class Camera:
@@ -268,6 +266,7 @@ class Camera:
         self.dx = -1
         self.dy = 0
 
+
 # меню во время игры
 class Game_Menu:
     def __init__(self, width, height):
@@ -278,7 +277,7 @@ class Game_Menu:
         increment = self.height // 10
         se_pos = self.height // 10 * 3
         self.continue_button = Button('menu_btn.png', 'menu_btn_act.png', menu_screen, fi_pos, se_pos,
-                                   70, 300, 'Продолжить')
+                                      70, 300, 'Продолжить')
         se_pos += increment
         self.restart_button = Button('menu_btn.png', 'menu_btn_act.png', menu_screen, fi_pos, se_pos,
                                      70, 300, 'Заново')
@@ -337,7 +336,7 @@ options_screen.fill((255, 255, 255))
 surface = pygame.display.get_surface()
 x, y = surface.get_width(), surface.get_height()
 clock = pygame.time.Clock()
-FPS = 50
+FPS = 200
 
 
 # класс персонажа
@@ -355,55 +354,66 @@ class Character(sprite.Sprite):
         self.rect.y = height - (height // 15) * 5 + 10
 
     def move(self):
-        self.rect.x += 1
+        # пока костыльно, зато без бага
+        a = 0
+        for i in all_barriers:
+            if pygame.sprite.collide_mask(self, i):
+                a += 1
+        if a == 0:
+            self.rect = self.rect.move(1, 0)
 
     # прыжок
     def jump(self):
-        self.rect.y -= 2
+        self.rect = self.rect.move(0, -5)
 
     # падение
     def fall(self):
-        self.rect.y += 2
+        self.rect = self.rect.move(0, 5)
 
-    def disturb(self, x_obst, y_top, y_bottom):
-        if self.rect.x <= x_obst <= self.rect.x + 200 and y_top <= self.rect.y <= y_bottom:
-            return False
-        else:
-            return True
-
-    def back(self):
-        self.rect.x -= 3
 
 # класс препятствий(тестовый)
 class Obstacle(sprite.Sprite):
-    image = pygame.transform.scale(load_image('Probnik.png'), (200, 200))
-
-
-    def __init__(self, skin, width, height):
+    def __init__(self, skin, x, y, image):
         super().__init__(skin)
-        self.image = Obstacle.image
+        self.image = load_image(image)
         self.rect = self.image.get_rect()
         self.mask = pygame.mask.from_surface(self.image)
-        self.rect.x = width
-        self.rect.y = height - (height // 15) * 5 + 10
+        self.rect.x = x
+        self.rect.y = y - (y // 15) * 5 + 10
 
     def move_obstacle(self):
-        self.rect.x -= 3
+        # если препятствие вышло за пределы экрана, то оно перемещается на рандомную(надо это дорабоать)
+        # координату справа
+        if self.rect.x > -200:
+            self.rect = self.rect.move(-1, 0)
+        else:
+            self.rect.x = surface.get_width() + random.randrange(0, 200)
+            self.rect.y = random.randint(surface.get_height() // 15 * 3, surface.get_height() // 15 * 12)
+
 
 # будущий класс бонусов
 class Bonus(Obstacle):
     pass
 
 
+all_sprites = sprite.Group()
+all_barriers = []
+all_barriers.append(Obstacle(all_sprites, surface.get_width() + random.randrange(0, 100),
+                             random.randrange(surface.get_height() // 15 * 5, surface.get_height() // 15 * 12),
+                             'wrong_answer.png'))
+all_barriers.append(Obstacle(all_sprites, surface.get_width() + random.randrange(0, 100),
+                             random.randrange(surface.get_height() // 15 * 5, surface.get_height() // 15 * 12),
+                             'wrong_answer.png'))
+all_barriers.append(Obstacle(all_sprites, surface.get_width() + random.randrange(0, 100),
+                             random.randrange(surface.get_height() // 15 * 5, surface.get_height() // 15 * 12),
+                             'wrong_answer.png'))
+
 running = True
 options = Options(x, y)
 menu = Menu(x, y)
 game = Play(x, y)
 
-all_sprites = sprite.Group()
-
-hero = Character(all_sprites, x, y)
-barrier = Obstacle(all_sprites, x, y)
+hero = Character(all_sprites, 100, y)
 camera = Camera(x, y)
 game_menu = Game_Menu(x, y)
 menu.start()
