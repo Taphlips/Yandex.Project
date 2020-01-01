@@ -34,12 +34,19 @@ def terminate():
 
 
 def restart(width, height):
-    global hero, barrier, camera
-    hero.rect.x = width // 2
-    hero.rect.y = height - (height // 15) * 5 + 10
-
-    barrier.rect.x = width
-    barrier.rect.y = height - (height // 15) * 5 + 10
+    global hero, all_sprites, all_barriers
+    all_sprites = sprite.Group()
+    hero = Character(all_sprites, 100, y)
+    all_barriers = []
+    all_barriers.append(Obstacle(all_sprites, surface.get_width() + random.randrange(0, 100),
+                                 random.randrange(surface.get_height() // 15 * 5, surface.get_height() // 15 * 12),
+                                 'wrong_answer.png'))
+    all_barriers.append(Obstacle(all_sprites, surface.get_width() + random.randrange(0, 100),
+                                 random.randrange(surface.get_height() // 15 * 5, surface.get_height() // 15 * 12),
+                                 'wrong_answer.png'))
+    all_barriers.append(Obstacle(all_sprites, surface.get_width() + random.randrange(0, 100),
+                                 random.randrange(surface.get_height() // 15 * 5, surface.get_height() // 15 * 12),
+                                 'wrong_answer.png'))
 
 
 # Класс, создающий кнопку в указанный координатах
@@ -217,13 +224,13 @@ class Play:
                         pos += 2
                     elif pos < 200:
                         action = 'fall'
-                        Character.fall(hero)
+                        Character.fall(hero, hero.const)
                         pos += 2
                     else:
                         action = 'stop'
                         flag = False
                 elif action == 'fall' and 100 <= pos < 200 and flag is False:
-                    Character.fall(hero)
+                    Character.fall(hero, hero.const)
                     pos += 2
             else:
                 Game_Menu.draw_game_menu(game_menu)
@@ -263,7 +270,7 @@ class Camera:
 
     # позиционировать камеру на объекте target
     def update(self, target):
-        self.dx = -1
+        self.dx = -3
         self.dy = 0
 
 
@@ -350,25 +357,34 @@ class Character(sprite.Sprite):
         super().__init__(skin)
         self.image = Character.image
         self.rect = self.image.get_rect()
+        self.ch_mask = pygame.mask.from_surface(self.image)
         self.rect.x = width // 2
         self.rect.y = height - (height // 15) * 5 + 10
+        self.const = height - (height // 15) * 5 + 10
 
     def move(self):
-        # пока костыльно, зато без бага
-        a = 0
         for i in all_barriers:
-            if pygame.sprite.collide_mask(self, i):
-                a += 1
-        if a == 0:
-            self.rect = self.rect.move(1, 0)
+            if self.rect.x <= i.rect.x <= self.rect.x + 200 and self.rect.y <= i.rect.y <= self.rect.y + 200 and \
+                 pygame.sprite.collide_mask(self, i):
+                    self.rect = self.rect.move(-3, 0)
+            elif self.rect.x >= i.rect.x and self.rect.y >= i.rect.y and \
+                    pygame.sprite.collide_mask(self, i):
+                        self.fall(self.const)
+            elif self.rect.x >= i.rect.x and self.rect.y + 200 <= i.rect.y and\
+                    pygame.sprite.collide_mask(self, i):
+                        self.fall(self.rect.y)
+            else:
+                self.rect = self.rect.move(1, 0)
 
     # прыжок
     def jump(self):
-        self.rect = self.rect.move(0, -5)
+        self.rect = self.rect.move(1, -5)
 
     # падение
-    def fall(self):
-        self.rect = self.rect.move(0, 5)
+    def fall(self, limit):
+        # остановка падения
+        if self.rect.y <= limit:
+            self.rect = self.rect.move(1, 5)
 
 
 # класс препятствий(тестовый)
@@ -377,9 +393,10 @@ class Obstacle(sprite.Sprite):
         super().__init__(skin)
         self.image = load_image(image)
         self.rect = self.image.get_rect()
-        self.mask = pygame.mask.from_surface(self.image)
+        self.ob_mask = pygame.mask.from_surface(self.image)
         self.rect.x = x
         self.rect.y = y - (y // 15) * 5 + 10
+
 
     def move_obstacle(self):
         # если препятствие вышло за пределы экрана, то оно перемещается на рандомную(надо это дорабоать)
