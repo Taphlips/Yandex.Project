@@ -1,9 +1,14 @@
 # импорт необходимых модулей
-import pygame
-import sys
-import random
-import os
+import pygame, sys, os, random, sqlite3, time, socket
 from pygame import sprite
+from Remade import Join, Registration
+from PyQt5.QtGui import QIcon, QPixmap, QMovie
+from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtWidgets import QWidget, QApplication, QLabel, QLineEdit, QVBoxLayout, QMessageBox
+from PyQt5.QtWidgets import QInputDialog, QFileDialog, QPushButton, QSizePolicy, QHBoxLayout
+from PyQt5.QtWidgets import QSpacerItem
+from random import choice, randint
+
 
 # инициализация pygame
 pygame.init()
@@ -151,6 +156,14 @@ class Options:
         pos_x = height - pos_y - size
         self.back_to_menu = Button('yellow_back_btn.png', 'blue_back_btn.png', options_screen, pos_x, pos_y,
                                    size, size, "<")
+        pos_x = width // 10 * 9
+        pos_y = height // 10 * 7
+        self.less = Button('yellow_back_btn.png', 'blue_back_btn.png', options_screen, pos_x, pos_y,
+                                   size, size, "-")
+        pos_x = width // 10 * 9
+        pos_y = height // 10 * 3
+        self.more = Button('yellow_back_btn.png', 'blue_back_btn.png', options_screen, pos_x, pos_y,
+                                   size, size, "+")
 
     def start(self):
         menu_screen.fill((255, 255, 255))
@@ -170,12 +183,20 @@ class Options:
                             menu_screen.fill((255, 255, 255))
                             options_screen.blit(menu_screen, (0, 0))
                             return
+                        elif (self.less.x < mp[0] < self.less.x + self.less.width and
+                                self.less.y < mp[1] < self.less.y + self.less.height):
+                            pass
+                        elif (self.more.x < mp[0] < self.more.x + self.more.width and
+                                self.more.y < mp[1] < self.more.y + self.more.height):
+                            pass
             font = pygame.font.Font(None, 150)
             string_rendered = font.render('OPTIONS', 1, pygame.Color('black'))
             intro_rect = string_rendered.get_rect()
             intro_rect.center = self.width // 2, 100
             options_screen.blit(string_rendered, intro_rect)
             self.back_to_menu.draw()
+            self.less.draw()
+            self.more.draw()
             menu_screen.blit(options_screen, (0, 0))
             pygame.display.flip()
             clock.tick(FPS)
@@ -186,6 +207,7 @@ class Play:
     def __init__(self, width, height):
         self.width = width
         self.height = height
+        self.point = 0
 
     def start(self):
         run = True
@@ -252,6 +274,7 @@ class Play:
             i.move_obstacle()
         for sprite in all_sprites:
             camera.apply(sprite)
+        self.point += 1
 
 
 # класс Камеры
@@ -364,15 +387,14 @@ class Character(sprite.Sprite):
 
     def move(self):
         for i in all_barriers:
-            if self.rect.x <= i.rect.x <= self.rect.x + 200 and self.rect.y <= i.rect.y <= self.rect.y + 200 and \
+            if i.rect.x <= self.rect.x + 200 and self.rect.y <= i.rect.y <= self.rect.y + 200 and \
                  pygame.sprite.collide_mask(self, i):
                     self.rect = self.rect.move(-3, 0)
-            elif self.rect.x >= i.rect.x and self.rect.y >= i.rect.y and \
+            elif self.rect.y >= i.rect.y and\
                     pygame.sprite.collide_mask(self, i):
                         self.fall(self.const)
-            elif self.rect.x >= i.rect.x and self.rect.y + 200 <= i.rect.y and\
-                    pygame.sprite.collide_mask(self, i):
-                        self.fall(self.rect.y)
+            elif pygame.sprite.collide_mask(self, i):
+                    self.fall(self.rect.y)
             else:
                 self.rect = self.rect.move(1, 0)
 
@@ -383,7 +405,7 @@ class Character(sprite.Sprite):
     # падение
     def fall(self, limit):
         # остановка падения
-        if self.rect.y <= limit:
+        if self.rect.y < limit:
             self.rect = self.rect.move(1, 5)
 
 
@@ -399,8 +421,6 @@ class Obstacle(sprite.Sprite):
 
 
     def move_obstacle(self):
-        # если препятствие вышло за пределы экрана, то оно перемещается на рандомную(надо это дорабоать)
-        # координату справа
         if self.rect.x > -200:
             self.rect = self.rect.move(-1, 0)
         else:

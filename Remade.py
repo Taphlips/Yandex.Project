@@ -10,7 +10,7 @@ from random import choice, randint
 class Registration(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowIcon(QIcon('Свин.jpg'))
+        self.setWindowIcon(QIcon('data\Свин.jpg'))
         self.i, okIsPressed = QInputDialog.getItem(self, "Семья свинов",
                                                    "Подтвердите, что вы не робот! Как зовут дочь отца Свинки Пеппы!",
                                                    ("Джордж", "Мама Свин", "Свинка Пеппа", "Папа Свин"), 0, False)
@@ -18,8 +18,8 @@ class Registration(QWidget):
             self.initUI()
         elif okIsPressed is True and self.i != 'Свинка Пеппа':
             self.setWindowTitle('Wasted')
-            self.setWindowIcon(QIcon('Крест.jpg'))
-            self.loser = QPixmap('Потрачено.jpg')
+            self.setWindowIcon(QIcon('data\Крест.jpg'))
+            self.loser = QPixmap('data\Потрачено.jpg')
             self.image = QLabel(self)
             self.move(0, 0)
             self.image.resize(self.loser.width(), self.loser.height())
@@ -32,7 +32,7 @@ class Registration(QWidget):
         self.move(200, 200)
 
         self.setWindowTitle('Регистрация')
-        self.setWindowIcon(QIcon('Иконка.png'))
+        self.setWindowIcon(QIcon('data\Иконка.png'))
         self.setWindowOpacity(1)
         self.setFixedSize(250, 250)
 
@@ -77,7 +77,7 @@ class Registration(QWidget):
         self.pas = self.pas_field.text()
         if self.add != '' and self.pas != '' and len(self.add) < 16:
             # подключение к базе данных Users
-            con = sqlite3.connect('Пользователи.db')
+            con = sqlite3.connect('data\Пользователи.db')
             cur = con.cursor()
             check_result = cur.execute("""SELECT User FROM Users""").fetchall()
             check_result = list(map(lambda x: str(x).lstrip("('").rstrip("')',"), check_result))
@@ -110,10 +110,7 @@ class Registration(QWidget):
     def success(self, nadpis):
         # выводим пользователю окно "Успех!" в случае входа или регистрации
         self.notice = QMessageBox.about(self, 'Успех!', nadpis)
-        # меняем имя игрока в уже заготовленном окне теста
-        Exercise.change(self)
-        # показываем окно теста
-        ex.show()
+        return True
 
     def return_name(self):
         return self.add
@@ -127,7 +124,7 @@ class Join(QWidget):
     def initUI(self):
         # начальный пользовательский интерфейс
         # установка гифки
-        self.gif = QMovie('Вход гифка.gif')
+        self.gif = QMovie('data\Вход гифка.gif')
         self.setGeometry(240, 240, 340, 340)
         self.im = QLabel()
         self.im.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -144,7 +141,7 @@ class Join(QWidget):
         self.gif.start()
 
         self.setWindowTitle('Вход')
-        self.setWindowIcon(QIcon('Вход.png'))
+        self.setWindowIcon(QIcon('data\Вход.png'))
         self.setFixedSize(450, 200)
 
         self.nik_label = QLabel('Введите существующий логин!', self)
@@ -178,7 +175,7 @@ class Join(QWidget):
         self.pas = self.password_line.text()
         if self.add != '' and self.pas != '':
             # подключаемся к базе данных Users
-            con = sqlite3.connect('Пользователи.db')
+            con = sqlite3.connect('data\Пользователи.db')
             cur = con.cursor()
             check_result = cur.execute("""SELECT User FROM Users""").fetchall()
             check_result = list(map(lambda x: str(x).lstrip("('").rstrip("')',"), check_result))
