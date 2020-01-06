@@ -130,7 +130,7 @@ class Menu:
                         # по кнопке "Играть" (выйдет из цикла меню и войдет в основной цикл с игрой)
                         elif (self.start_button.x < mp[0] < self.start_button.x + self.start_button.width and
                               self.start_button.y < mp[1] < self.start_button.y + self.start_button.height):
-                            menu_running = False
+                            game.start()
             # Название игры вверху экрана
             font = pygame.font.Font(None, 150)
             string_rendered = font.render('YANDEX.GAME', 1, pygame.Color('black'))
@@ -142,8 +142,6 @@ class Menu:
             self.exit_button.draw()
             pygame.display.flip()
             clock.tick(FPS)
-        menu_screen.fill((255, 255, 255))
-        game.start()
 
 
 # Класс настроек
@@ -208,9 +206,10 @@ class Play:
         self.width = width
         self.height = height
         self.point = 0
+        self.run = True
 
     def start(self):
-        run = True
+        menu_screen.fill((255, 255, 255))
         pos = 200
         action = 'jump'
         flag = False
@@ -222,7 +221,7 @@ class Play:
                     pass
                 if event.type == pygame.KEYDOWN:
                     if event.key == 27:
-                        run = False
+                        game_menu.draw_game_menu()
                     elif event.key == 32:
                         # прыжок на пробел
                         if flag is False and pos == 200:
@@ -237,7 +236,7 @@ class Play:
                             action = 'fall'
                             zn = 100 - pos
                             pos = 100 + zn
-            if run:
+            if self.run:
                 self.game_draw()
                 # прыжок
                 if flag:
@@ -254,19 +253,18 @@ class Play:
                 elif action == 'fall' and 100 <= pos < 200 and flag is False:
                     Character.fall(hero, hero.const)
                     pos += 2
-            else:
-                Game_Menu.draw_game_menu(game_menu)
+            menu_screen.blit(game_screen, (0, 0))
             pygame.display.flip()
             clock.tick(FPS)
 
     def game_draw(self):
         # обновление фона
-        menu_screen.fill(pygame.Color('aquamarine'), pygame.Rect(0, 0, self.width, self.height // 15 * 14))
-        menu_screen.fill(pygame.Color('peru'), pygame.Rect(0, self.height // 15 * 14, self.width, self.height))
-        pygame.draw.circle(menu_screen, pygame.Color('yellow'), (self.width // 15 * 13, self.height // 15 * 2),
+        game_screen.fill(pygame.Color('aquamarine'), pygame.Rect(0, 0, self.width, self.height // 15 * 14))
+        game_screen.fill(pygame.Color('peru'), pygame.Rect(0, self.height // 15 * 14, self.width, self.height))
+        pygame.draw.circle(game_screen, pygame.Color('yellow'), (self.width // 15 * 13, self.height // 15 * 2),
                            self.height // 10)
         # отрисовка героя
-        all_sprites.draw(menu_screen)
+        all_sprites.draw(game_screen)
         hero.move()
         # обновление камеры
         camera.update(hero)
@@ -312,7 +310,8 @@ class Game_Menu:
         self.restart_button = Button('menu_btn.png', 'menu_btn_act.png', menu_screen, fi_pos, se_pos,
                                      70, 300, 'Заново')
         se_pos += increment
-        self.exit_button = Button('menu_btn.png', 'menu_btn_act.png', menu_screen, fi_pos, se_pos, 70, 300, 'Выход')
+        self.exit_button = Button('menu_btn.png', 'menu_btn_act.png', menu_screen, fi_pos, se_pos,
+                                  70, 300, 'Выход')
 
     def draw_game_menu(self):
         menu_running = True
@@ -330,12 +329,13 @@ class Game_Menu:
                         elif (self.restart_button.x < mp[0] < self.restart_button.x + self.restart_button.width and
                               self.restart_button.y < mp[1] < self.restart_button.y + self.restart_button.height):
                             menu_running = False
-                            flag = 'new'
+                            restart(x, y)
+                            game.start()
                         # по кнопке "Продолжить"
                         elif (self.continue_button.x < mp[0] < self.continue_button.x + self.continue_button.width and
                               self.continue_button.y < mp[1] < self.continue_button.y + self.continue_button.height):
                             menu_running = False
-                            flag = 'past'
+                            return
             font = pygame.font.Font(None, 150)
             string_rendered = font.render('Пауза', 1, pygame.Color('black'))
             intro_rect = string_rendered.get_rect()
@@ -346,11 +346,6 @@ class Game_Menu:
             self.exit_button.draw()
             pygame.display.flip()
             clock.tick(FPS)
-        if flag == 'past':
-            pass
-        elif flag == 'new':
-            restart(x, y)
-            game.start()
 
 
 # Название окна
@@ -362,6 +357,9 @@ menu_screen.fill((255, 255, 255))
 # Холст, на котором будут рисоваться настройки
 options_screen = pygame.Surface(menu_screen.get_size())
 options_screen.fill((255, 255, 255))
+# Холст, на котором будет рисоваться игра
+game_screen = pygame.Surface(menu_screen.get_size())
+game_screen.fill((255, 255, 255))
 
 surface = pygame.display.get_surface()
 x, y = surface.get_width(), surface.get_height()
@@ -389,7 +387,7 @@ class Character(sprite.Sprite):
         for i in all_barriers:
             if i.rect.x <= self.rect.x + 200 and self.rect.y <= i.rect.y <= self.rect.y + 200 and \
                  pygame.sprite.collide_mask(self, i):
-                    self.rect = self.rect.move(-3, 0)
+                    self.rect = self.rect.move(0, 0)
             elif self.rect.y >= i.rect.y and\
                     pygame.sprite.collide_mask(self, i):
                         self.fall(self.const)
@@ -418,7 +416,6 @@ class Obstacle(sprite.Sprite):
         self.ob_mask = pygame.mask.from_surface(self.image)
         self.rect.x = x
         self.rect.y = y - (y // 15) * 5 + 10
-
 
     def move_obstacle(self):
         if self.rect.x > -200:
