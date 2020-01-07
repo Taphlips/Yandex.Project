@@ -41,17 +41,36 @@ def terminate():
 def restart(width, height):
     global hero, all_sprites, all_barriers
     all_sprites = sprite.Group()
-    hero = Character(all_sprites, 100, y)
+    hero = Character(all_sprites, surface.get_width() // 10 * 3, y)
     all_barriers = []
-    all_barriers.append(Obstacle(all_sprites, surface.get_width() + random.randrange(0, 100),
+    all_barriers.append(Obstacle(all_sprites, surface.get_width() + random.randrange(100, 500),
                                  random.randrange(surface.get_height() // 15 * 5, surface.get_height() // 15 * 12),
                                  'wrong_answer.png'))
-    all_barriers.append(Obstacle(all_sprites, surface.get_width() + random.randrange(0, 100),
+    all_barriers.append(Obstacle(all_sprites, surface.get_width() + random.randrange(100, 500) + 350,
                                  random.randrange(surface.get_height() // 15 * 5, surface.get_height() // 15 * 12),
                                  'wrong_answer.png'))
-    all_barriers.append(Obstacle(all_sprites, surface.get_width() + random.randrange(0, 100),
+    all_barriers.append(Obstacle(all_sprites, surface.get_width() + random.randrange(100, 500) + 700,
                                  random.randrange(surface.get_height() // 15 * 5, surface.get_height() // 15 * 12),
                                  'wrong_answer.png'))
+    all_barriers.append(Obstacle(all_sprites, surface.get_width() + random.randrange(100, 500) + 1050,
+                                 random.randrange(surface.get_height() // 15 * 5, surface.get_height() // 15 * 12),
+                                 'wrong_answer.png'))
+
+
+class Object(sprite.Sprite):
+    def __init__(self, skin, image, dx):
+        super().__init__(skin)
+        self.dx = dx
+        self.image = load_image(image)
+        self.rect = self.image.get_rect()
+        self.rect.x = surface.get_width() + self.dx
+        self.rect.y = surface.get_height() // 10 * 2
+
+    def move(self):
+        if self.rect.x > -260:
+            self.rect = self.rect.move(-0.5, 0)
+        else:
+            self.rect.x = surface.get_width() + self.dx
 
 
 # Класс, создающий кнопку в указанный координатах
@@ -263,6 +282,8 @@ class Play:
         game_screen.fill(pygame.Color('peru'), pygame.Rect(0, self.height // 15 * 14, self.width, self.height))
         pygame.draw.circle(game_screen, pygame.Color('yellow'), (self.width // 15 * 13, self.height // 15 * 2),
                            self.height // 10)
+        for i in all_objects:
+            i.move()
         # отрисовка героя
         all_sprites.draw(game_screen)
         hero.move()
@@ -291,7 +312,7 @@ class Camera:
 
     # позиционировать камеру на объекте target
     def update(self, target):
-        self.dx = -3
+        self.dx = -4
         self.dy = 0
 
 
@@ -398,16 +419,16 @@ class Character(sprite.Sprite):
 
     # прыжок
     def jump(self):
-        self.rect = self.rect.move(1, -5)
+        self.rect = self.rect.move(0, -5)
 
     # падение
     def fall(self, limit):
         # остановка падения
         if self.rect.y < limit:
-            self.rect = self.rect.move(1, 5)
+            self.rect = self.rect.move(0, 5)
 
 
-# класс препятствий(тестовый)
+# класс препятствий
 class Obstacle(sprite.Sprite):
     def __init__(self, skin, x, y, image):
         super().__init__(skin)
@@ -415,13 +436,13 @@ class Obstacle(sprite.Sprite):
         self.rect = self.image.get_rect()
         self.ob_mask = pygame.mask.from_surface(self.image)
         self.rect.x = x
-        self.rect.y = y - (y // 15) * 5 + 10
+        self.rect.y = y
 
     def move_obstacle(self):
         if self.rect.x > -200:
             self.rect = self.rect.move(-1, 0)
         else:
-            self.rect.x = surface.get_width() + random.randrange(0, 200)
+            self.rect.x = surface.get_width() + random.randrange(100, 500)
             self.rect.y = random.randint(surface.get_height() // 15 * 3, surface.get_height() // 15 * 12)
 
 
@@ -432,22 +453,28 @@ class Bonus(Obstacle):
 
 all_sprites = sprite.Group()
 all_barriers = []
-all_barriers.append(Obstacle(all_sprites, surface.get_width() + random.randrange(0, 100),
-                             random.randrange(surface.get_height() // 15 * 5, surface.get_height() // 15 * 12),
+all_barriers.append(Obstacle(all_sprites, surface.get_width() + random.randrange(100, 500),
+                             random.randint(surface.get_height() // 10, surface.get_height() // 10 * 2),
                              'wrong_answer.png'))
-all_barriers.append(Obstacle(all_sprites, surface.get_width() + random.randrange(0, 100),
-                             random.randrange(surface.get_height() // 15 * 5, surface.get_height() // 15 * 12),
+all_barriers.append(Obstacle(all_sprites, surface.get_width() + random.randrange(100, 500) + 350,
+                             random.randint(surface.get_height() // 10 * 3, surface.get_height() // 10 * 5),
                              'wrong_answer.png'))
-all_barriers.append(Obstacle(all_sprites, surface.get_width() + random.randrange(0, 100),
-                             random.randrange(surface.get_height() // 15 * 5, surface.get_height() // 15 * 12),
+all_barriers.append(Obstacle(all_sprites, surface.get_width() + random.randrange(100, 500) + 700,
+                             random.randint(surface.get_height() // 10 * 6, surface.get_height() // 10 * 8),
                              'wrong_answer.png'))
+all_barriers.append(Obstacle(all_sprites, surface.get_width() + random.randrange(100, 500) + 1050,
+                             random.randint(surface.get_height() // 10, surface.get_height()),
+                             'wrong_answer.png'))
+
+all_objects = [Object(all_sprites, 'cloud1.png', random.randint(100, 600)),
+               Object(all_sprites, 'cloud2.png', random.randint(1000, 2000))]
 
 running = True
 options = Options(x, y)
 menu = Menu(x, y)
 game = Play(x, y)
 
-hero = Character(all_sprites, 100, y)
+hero = Character(all_sprites, surface.get_width() // 10 * 3, y)
 camera = Camera(x, y)
 game_menu = Game_Menu(x, y)
 menu.start()
