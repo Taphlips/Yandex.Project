@@ -1,13 +1,6 @@
 # импорт необходимых модулей
-import pygame, sys, os, random, sqlite3, time, socket
+import pygame, sys, os, random
 from pygame import sprite
-from Remade import Join, Registration
-from PyQt5.QtGui import QIcon, QPixmap, QMovie
-from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtWidgets import QWidget, QApplication, QLabel, QLineEdit, QVBoxLayout, QMessageBox
-from PyQt5.QtWidgets import QInputDialog, QFileDialog, QPushButton, QSizePolicy, QHBoxLayout
-from PyQt5.QtWidgets import QSpacerItem
-from random import choice, randint
 
 
 # инициализация pygame
