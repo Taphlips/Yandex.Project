@@ -12,6 +12,9 @@ from random import choice, randint
 
 # инициализация pygame
 pygame.init()
+pygame.mixer.music.load("Sound.wav")
+pygame.mixer.music.set_volume(0.5)
+pygame.mixer.music.play(-1, 0.0)
 
 
 def load_image(name, colorkey=None):
@@ -115,6 +118,7 @@ class Button:
 # класс меню перед игрой
 class Menu:
     def __init__(self, width, height):
+        self.snd_level = 5
         self.width = width
         self.height = height
         # Создание кнопок с помощью класса Button
@@ -166,6 +170,7 @@ class Menu:
 # Класс настроек
 class Options:
     def __init__(self, width, height):
+        self.snd_flag = False
         self.width = width
         self.height = height
         size = height // 10
@@ -202,10 +207,10 @@ class Options:
                             return
                         elif (self.less.x < mp[0] < self.less.x + self.less.width and
                                 self.less.y < mp[1] < self.less.y + self.less.height):
-                            pass
+                            self.loudness('-')
                         elif (self.more.x < mp[0] < self.more.x + self.more.width and
                                 self.more.y < mp[1] < self.more.y + self.more.height):
-                            pass
+                            self.loudness('+')
             font = pygame.font.Font(None, 150)
             string_rendered = font.render('OPTIONS', 1, pygame.Color('black'))
             intro_rect = string_rendered.get_rect()
@@ -215,8 +220,35 @@ class Options:
             self.less.draw()
             self.more.draw()
             menu_screen.blit(options_screen, (0, 0))
+            if menu.snd_level == 0:
+                self.pic_sound('No sound.png', 10)
+            elif menu.snd_level == 10:
+                self.pic_sound('Max sound.png', 7)
+            else:
+                if self.snd_flag == True:
+                    self.snd_flag = False
+                    options_screen.fill((255, 255, 255))
             pygame.display.flip()
             clock.tick(FPS)
+
+    def loudness(self, sign):
+        snd_lev = menu.snd_level
+        if sign == '-' and snd_lev > 0:
+            snd_lev -= 1
+            pygame.mixer.music.set_volume(snd_lev / 10)
+        elif sign == '+' and snd_lev < 10:
+            snd_lev += 1
+            pygame.mixer.music.set_volume(snd_lev / 10)
+        menu.snd_level = snd_lev
+
+    def pic_sound(self, name, divide):
+        self.image = pygame.transform.scale(load_image(name), (self.width // divide, self.width // 10))
+        self.rect = self.image.get_rect()
+        self.rect.x = 0
+        self.rect.y = 0
+        options_screen.blit(self.image, (self.rect.x, self.rect.y))
+        self.snd_flag = True
+
 
 
 # класс игры
