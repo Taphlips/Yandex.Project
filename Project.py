@@ -277,6 +277,7 @@ class Play:
         self.jump_num = 0
         self.over = False
         self.score = 0
+        self.coins = 0
 
     def start(self):
         menu_screen.fill((255, 255, 255))
@@ -296,6 +297,7 @@ class Play:
                             if self.jump_num < 3:
                                 hero.jumpc = 20
             self.game_draw()
+            self.coins = self.score // 100
             if self.jump_flag:
                 hero.jump()
             if self.over:
@@ -305,18 +307,28 @@ class Play:
             clock.tick(FPS)
 
     def game_draw(self):
+        coin_font = pygame.font.Font(None, 70)
+
+        # Вывод картинки монеты на экран
+        coin_image = load_image('coin.png')
+        coin_string = coin_font.render('X' + str(int(self.coins)), 1, pygame.Color('black'))
+        coin_rect = coin_string.get_rect()
+        coin_rect.x, coin_rect.y = surface.get_width() // 20 * 2, surface.get_height() // 20 * 2.2
+
+        score_font = pygame.font.Font(None, 50)
         # Вывод счета игрока на экран:
-        font = pygame.font.Font(None, 50)
-        string_rendered = font.render('Ваш счет: ' + str(int(self.score)), 1, pygame.Color('black'))
-        intro_rect = string_rendered.get_rect()
-        intro_rect.x, intro_rect.y = surface.get_width() // 20, surface.get_height() // 20
+        score_string = score_font.render('Ваш счет: ' + str(int(self.score)), 1, pygame.Color('black'))
+        score_rect = score_string.get_rect()
+        score_rect.x, score_rect.y = surface.get_width() // 20, surface.get_height() // 20
 
         # обновление фона
         game_screen.fill(pygame.Color('aquamarine'), pygame.Rect(0, 0, self.width, self.height // 15 * 14))
         game_screen.fill(pygame.Color('peru'), pygame.Rect(0, self.height // 15 * 14, self.width, self.height))
         pygame.draw.circle(game_screen, pygame.Color('yellow'), (self.width // 15 * 13, self.height // 15 * 2),
                            self.height // 10)
-        game_screen.blit(string_rendered, intro_rect)
+        game_screen.blit(score_string, score_rect)
+        game_screen.blit(coin_string, coin_rect)
+        game_screen.blit(coin_image, (surface.get_width() // 20, surface.get_height() // 20 * 2))
         # передвижение препятствий
         for i in all_objects:
             i.move()
@@ -460,6 +472,7 @@ class Game_Over_menu:
             font = pygame.font.Font(None, 150)
             string_rendered = font.render('Игра окончена', 1, pygame.Color('red'))
             font2 = pygame.font.Font(None, 80)
+            # Строка с результатом (по очкам)(сделай пж такую же, только про монеты)
             score_string = font2.render('Результат: ' + str(int(game.score)), 1, pygame.Color('black'))
             intro_rect = string_rendered.get_rect()
             intro_rect.center = self.width // 2, 100
@@ -515,7 +528,8 @@ class Character(sprite.Sprite):
             if not pygame.sprite.collide_mask(self, i):
                 self.rect.x += 1
                 game.score += 0.1
-            elif self.rect.clip(i.rect).height < 50:
+            elif self.rect.clip(i.rect).height < 50 and self.rect.bottom >= i.rect.bottom:
+                game.jump_flag = False
                 self.rect.bottom = i.rect.y
                 self.rect.x += 1
                 game.jump_num = 0
