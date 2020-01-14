@@ -9,7 +9,6 @@ from PyQt5.QtWidgets import QInputDialog, QFileDialog, QPushButton, QSizePolicy,
 from PyQt5.QtWidgets import QSpacerItem
 from random import choice, randint
 
-
 # инициализация pygame
 pygame.init()
 pygame.mixer.music.load("Sound.wav")
@@ -44,6 +43,10 @@ def terminate():
 
 def restart(width, height):
     global hero, all_sprites, all_barriers
+    game.over = False
+    game.jump_flag = False
+    game.score = 0
+    game.jump_num = 0
     all_sprites = sprite.Group()
     hero = Character(all_sprites, surface.get_width() // 10 * 3, y)
     all_barriers = []
@@ -59,10 +62,10 @@ def restart(width, height):
     all_barriers.append(Obstacle(all_sprites, surface.get_width() + random.randrange(100, 500) + 1050,
                                  random.randrange(surface.get_height() // 15 * 5, surface.get_height() // 15 * 12),
                                  'wrong_answer.png'))
-    all_bonuses = []
-    all_bonuses.append(Bonus(all_sprites, surface.get_width() + random.randrange(100, 500),
-                                 random.randrange(surface.get_height() // 15 * 5, surface.get_height() // 15 * 12),
-                                 'First bonus.png'))
+    # all_bonuses = []
+    # all_bonuses.append(Bonus(all_sprites, surface.get_width() + random.randrange(100, 500),
+    # random.randrange(surface.get_height() // 15 * 5, surface.get_height() // 15 * 12),
+    # 'First bonus.png'))
 
 
 class Object(sprite.Sprite):
@@ -162,6 +165,8 @@ class Menu:
                         elif (self.start_button.x < mp[0] < self.start_button.x + self.start_button.width and
                               self.start_button.y < mp[1] < self.start_button.y + self.start_button.height):
                             click_sound.play()
+                            menu_running = False
+                            restart(x, y)
                             game.start()
             # Название игры вверху экрана
             font = pygame.font.Font(None, 150)
@@ -190,11 +195,11 @@ class Options:
         pos_x = width // 10 * 9
         pos_y = height // 10 * 7
         self.less = Button('yellow_back_btn.png', 'blue_back_btn.png', options_screen, pos_x, pos_y,
-                                   size, size, "-")
+                           size, size, "-")
         pos_x = width // 10 * 9
         pos_y = height // 10 * 3
         self.more = Button('yellow_back_btn.png', 'blue_back_btn.png', options_screen, pos_x, pos_y,
-                                   size, size, "+")
+                           size, size, "+")
 
     def start(self):
         menu_screen.fill((255, 255, 255))
@@ -216,11 +221,11 @@ class Options:
                             click_sound.play()
                             return
                         elif (self.less.x < mp[0] < self.less.x + self.less.width and
-                                self.less.y < mp[1] < self.less.y + self.less.height):
+                              self.less.y < mp[1] < self.less.y + self.less.height):
                             click_sound.play()
                             self.loudness('-')
                         elif (self.more.x < mp[0] < self.more.x + self.more.width and
-                                self.more.y < mp[1] < self.more.y + self.more.height):
+                              self.more.y < mp[1] < self.more.y + self.more.height):
                             click_sound.play()
                             self.loudness('+')
             font = pygame.font.Font(None, 150)
@@ -271,6 +276,7 @@ class Play:
         self.jump_flag = False
         self.jump_num = 0
         self.over = False
+        self.score = 0
 
     def start(self):
         menu_screen.fill((255, 255, 255))
@@ -286,9 +292,9 @@ class Play:
                         # прыжок на пробел
                         self.jump_flag = True
                         self.jump_num += 1
-                        if -25 < hero.jumpc < 25:
+                        if -20 < hero.jumpc < 20:
                             if self.jump_num < 3:
-                                hero.jumpc = 25
+                                hero.jumpc = 20
             self.game_draw()
             if self.jump_flag:
                 hero.jump()
@@ -299,11 +305,18 @@ class Play:
             clock.tick(FPS)
 
     def game_draw(self):
+        # Вывод счета игрока на экран:
+        font = pygame.font.Font(None, 50)
+        string_rendered = font.render('Ваш счет: ' + str(int(self.score)), 1, pygame.Color('black'))
+        intro_rect = string_rendered.get_rect()
+        intro_rect.x, intro_rect.y = surface.get_width() // 20, surface.get_height() // 20
+
         # обновление фона
         game_screen.fill(pygame.Color('aquamarine'), pygame.Rect(0, 0, self.width, self.height // 15 * 14))
         game_screen.fill(pygame.Color('peru'), pygame.Rect(0, self.height // 15 * 14, self.width, self.height))
         pygame.draw.circle(game_screen, pygame.Color('yellow'), (self.width // 15 * 13, self.height // 15 * 2),
                            self.height // 10)
+        game_screen.blit(string_rendered, intro_rect)
         # передвижение препятствий
         for i in all_objects:
             i.move()
@@ -314,8 +327,8 @@ class Play:
         camera.update(hero)
         for i in all_barriers:
             i.move_obstacle()
-        for elem in all_bonuses:
-            elem.move_obstacle()
+        # for elem in all_bonuses:
+        #    elem.move_obstacle()
         for sprite in all_sprites:
             camera.apply(sprite)
         self.point += 1
@@ -370,18 +383,23 @@ class Game_Menu:
                         # по кнопке "Выход"
                         if (self.exit_button.x < mp[0] < self.exit_button.x + self.exit_button.width and
                                 self.exit_button.y < mp[1] < self.exit_button.y + self.exit_button.height):
+                            click_sound.play()
                             terminate()
                         # по кнопке "Заново"
                         elif (self.restart_button.x < mp[0] < self.restart_button.x + self.restart_button.width and
                               self.restart_button.y < mp[1] < self.restart_button.y + self.restart_button.height):
+                            click_sound.play()
                             menu_running = False
                             restart(x, y)
                             game.start()
                         # по кнопке "Продолжить"
                         elif (self.continue_button.x < mp[0] < self.continue_button.x + self.continue_button.width and
                               self.continue_button.y < mp[1] < self.continue_button.y + self.continue_button.height):
-                            menu_running = False
+                            click_sound.play()
                             return
+                if event.type == pygame.KEYDOWN:
+                    if event.key == 27:
+                        return
             font = pygame.font.Font(None, 150)
             string_rendered = font.render('Пауза', 1, pygame.Color('black'))
             intro_rect = string_rendered.get_rect()
@@ -403,13 +421,13 @@ class Game_Over_menu:
         increment = self.height // 10
         y = self.height // 10 * 3
         self.restart_button = Button('menu_btn.png', 'menu_btn_act.png', menu_screen, x, y,
-                                      70, 300, 'Заново')
+                                     70, 300, 'Заново')
         y += increment
         self.to_menu = Button('menu_btn.png', 'menu_btn_act.png', menu_screen, x, y,
-                                     70, 300, 'Выход в меню')
+                              70, 300, 'Главное меню')
         y += increment
         self.exit_button = Button('menu_btn.png', 'menu_btn_act.png', menu_screen, x, y,
-                                  70, 300, 'Выход из игры')
+                                  70, 300, 'Выход')
 
     def draw(self):
         menu_running = True
@@ -422,24 +440,33 @@ class Game_Over_menu:
                         # по кнопке "Выход"
                         if (self.exit_button.x < mp[0] < self.exit_button.x + self.exit_button.width and
                                 self.exit_button.y < mp[1] < self.exit_button.y + self.exit_button.height):
+                            click_sound.play()
                             terminate()
                         # по кнопке "Заново"
                         elif (self.restart_button.x < mp[0] < self.restart_button.x + self.restart_button.width and
                               self.restart_button.y < mp[1] < self.restart_button.y + self.restart_button.height):
+                            click_sound.play()
                             menu_running = False
                             restart(x, y)
                             game.start()
                         # по кнопке "Выход в меню"
                         elif (self.to_menu.x < mp[0] < self.to_menu.x + self.to_menu.width and
                               self.to_menu.y < mp[1] < self.to_menu.y + self.to_menu.height):
+                            click_sound.play()
+                            menu_running = False
+                            game.over = False
                             menu_screen.fill((255, 255, 255))
-                            game_over_screen.blit(menu_screen, (0, 0))
-                            return
+                            menu.start()
             font = pygame.font.Font(None, 150)
-            string_rendered = font.render('Игра окончена', 1, pygame.Color('black'))
+            string_rendered = font.render('Игра окончена', 1, pygame.Color('red'))
+            font2 = pygame.font.Font(None, 80)
+            score_string = font2.render('Результат: ' + str(int(game.score)), 1, pygame.Color('black'))
             intro_rect = string_rendered.get_rect()
             intro_rect.center = self.width // 2, 100
+            score_rect = score_string.get_rect()
+            score_rect.center = self.width // 2, 220
             menu_screen.blit(string_rendered, intro_rect)
+            menu_screen.blit(score_string, score_rect)
             self.to_menu.draw()
             self.restart_button.draw()
             self.exit_button.draw()
@@ -459,9 +486,6 @@ options_screen.fill((255, 255, 255))
 # Холст, на котором будет рисоваться игра
 game_screen = pygame.Surface(menu_screen.get_size())
 game_screen.fill((255, 255, 255))
-# Холст, на котором будет рисовать меню после окончания игры
-game_over_screen = pygame.Surface(menu_screen.get_size())
-game_over_screen.fill((255, 255, 255))
 
 surface = pygame.display.get_surface()
 x, y = surface.get_width(), surface.get_height()
@@ -482,7 +506,7 @@ class Character(sprite.Sprite):
         self.rect = self.image.get_rect()
         self.ch_mask = pygame.mask.from_surface(self.image)
         self.rect.x = width // 2
-        self.jumpc = 25
+        self.jumpc = 20
         self.rect.y = surface.get_height() // 10 * 7
         self.const = height - (height // 15) * 5 + 10
 
@@ -490,25 +514,26 @@ class Character(sprite.Sprite):
         for i in all_barriers:
             if not pygame.sprite.collide_mask(self, i):
                 self.rect.x += 1
-                self.rect.clip(i.rect)
+                game.score += 0.1
             elif self.rect.clip(i.rect).height < 50:
                 self.rect.bottom = i.rect.y
-                print('Ты наверху')
+                self.rect.x += 1
+                game.jump_num = 0
             elif self.rect.clip(i.rect).width > 0:
                 game.over = True
-        for i in all_bonuses:
-            if not pygame.sprite.collide_mask(self, i):
-                self.rect.x += 1
-                self.rect.clip(i.rect)
-            elif self.rect.clip(i.rect).height < 50:
-                self.rect.bottom = i.rect.y
-                print('Ты наверху')
-            elif self.rect.clip(i.rect).width > 0:
-                Bonus.acceleration(i)
+        # for i in all_bonuses:
+        # if not pygame.sprite.collide_mask(self, i):
+        #    self.rect.x += 1
+        #    self.rect.clip(i.rect)
+        # elif self.rect.clip(i.rect).height < 50:
+        #    self.rect.bottom = i.rect.y
+        #    print('Ты наверху')
+        # elif self.rect.clip(i.rect).width > 0:
+        #    Bonus.acceleration(i)
 
     # прыжок
     def jump(self):
-        if self.jumpc >= -25:
+        if self.jumpc >= -20:
             self.rect.y -= self.jumpc
             self.jumpc -= 1
         else:
@@ -516,7 +541,7 @@ class Character(sprite.Sprite):
                 self.rect.y = min(surface.get_height() // 10 * 7, self.rect.y - self.jumpc)
                 self.jumpc -= 1
             else:
-                self.jumpc = 25
+                self.jumpc = 20
                 game.jump_flag = False
                 game.jump_num = 0
 
@@ -584,10 +609,10 @@ all_barriers.append(Obstacle(all_sprites, surface.get_width() + random.randrange
                              random.randint(surface.get_height() // 10, surface.get_height()),
                              'wrong_answer.png'))
 
-all_bonuses = []
-all_bonuses.append(Bonus(all_sprites, surface.get_width() + random.randrange(100, 500),
-                                random.randrange(surface.get_height() // 15 * 5, surface.get_height() // 15 * 12),
-                                'First bonus.png'))
+# all_bonuses = []
+# all_bonuses.append(Bonus(all_sprites, surface.get_width() + random.randrange(100, 500),
+# random.randrange(surface.get_height() // 15 * 5, surface.get_height() // 15 * 12),
+# 'First bonus.png'))
 
 all_objects = [Object(all_sprites, 'cloud1.png', random.randint(100, 600)),
                Object(all_sprites, 'cloud2.png', random.randint(1000, 2000))]
