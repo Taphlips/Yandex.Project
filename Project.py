@@ -1,13 +1,7 @@
 # импорт необходимых модулей
-import pygame, sys, os, random, sqlite3, time, socket
+import pygame, sys, os, random
 from pygame import sprite
-from Remade import Join, Registration
-from PyQt5.QtGui import QIcon, QPixmap, QMovie
-from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtWidgets import QWidget, QApplication, QLabel, QLineEdit, QVBoxLayout, QMessageBox
-from PyQt5.QtWidgets import QInputDialog, QFileDialog, QPushButton, QSizePolicy, QHBoxLayout
-from PyQt5.QtWidgets import QSpacerItem
-from random import choice, randint
+
 
 # инициализация pygame
 pygame.init()
@@ -42,30 +36,28 @@ def terminate():
 
 
 def restart(width, height):
-    global hero, all_sprites, all_barriers
+    global hero, all_sprites, all_objects
     game.over = False
     game.jump_flag = False
     game.score = 0
     game.jump_num = 0
     all_sprites = sprite.Group()
     hero = Character(all_sprites, surface.get_width() // 10 * 3, y)
-    #all_barriers = []
-    #all_barriers.append(Obstacle(all_sprites, surface.get_width() + random.randrange(100, 500),
-                                 #random.randrange(surface.get_height() // 15 * 5, surface.get_height() // 15 * 12),
-                                 #'wrong_answer.png'))
-    #all_barriers.append(Obstacle(all_sprites, surface.get_width() + random.randrange(100, 500) + 350,
-                                 #random.randrange(surface.get_height() // 15 * 5, surface.get_height() // 15 * 12),
-                                 #'wrong_answer.png'))
-    #all_barriers.append(Obstacle(all_sprites, surface.get_width() + random.randrange(100, 500) + 700,
-                                 #random.randrange(surface.get_height() // 15 * 5, surface.get_height() // 15 * 12),
-                                 #'wrong_answer.png'))
-    #all_barriers.append(Obstacle(all_sprites, surface.get_width() + random.randrange(100, 500) + 1050,
-                                 #random.randrange(surface.get_height() // 15 * 5, surface.get_height() // 15 * 12),
-                                 #'wrong_answer.png'))
-    all_bonuses = []
-    all_bonuses.append(Bonus(all_sprites, surface.get_width() + random.randrange(100, 500),
-                             random.randrange(surface.get_height() // 15 * 5, surface.get_height() // 15 * 12),
-                             'First bonus.png'))
+    all_objects = []
+    all_objects.append(Obstacle(all_sprites, surface.get_width() + random.randrange(100, 500),
+                                random.randrange(surface.get_height() // 15 * 5, surface.get_height() // 15 * 12),
+                                'wrong_answer.png'))
+    all_objects.append(Obstacle(all_sprites, surface.get_width() + random.randrange(100, 500) + 350,
+                                random.randrange(surface.get_height() // 15 * 5, surface.get_height() // 15 * 12),
+                                'wrong_answer.png'))
+    all_objects.append(Bonus(all_sprites, surface.get_width() + random.randrange(100, 500) + 1050,
+                             surface.get_height() // 10 * 8,
+                             'coin_bonuse.png', 'деньги'))
+
+
+def boost():
+    for i in all_objects:
+        i.speed += 1
 
 
 class Object(sprite.Sprite):
@@ -143,6 +135,8 @@ class Menu:
         y += delta_y
         self.exit_button = Button('menu_btn.png', 'menu_btn_act.png', menu_screen, x, y, 70, 300, 'Выход')
 
+        self.background_image = load_image('game_background_1.png')
+
     def start(self):
         # Основной цикл меню
         menu_running = True
@@ -170,6 +164,7 @@ class Menu:
                             restart(x, y)
                             game.start()
             # Название игры вверху экрана
+            menu_screen.blit(self.background_image, (0, 0))
             font = pygame.font.Font(None, 150)
             string_rendered = font.render('YANDEX.GAME', 1, pygame.Color('black'))
             intro_rect = string_rendered.get_rect()
@@ -202,6 +197,8 @@ class Options:
         self.more = Button('yellow_back_btn.png', 'blue_back_btn.png', options_screen, pos_x, pos_y,
                            size, size, "+")
 
+        self.background_image = load_image('game_background_1.png')
+
     def start(self):
         menu_screen.fill((255, 255, 255))
 
@@ -229,6 +226,7 @@ class Options:
                               self.more.y < mp[1] < self.more.y + self.more.height):
                             click_sound.play()
                             self.loudness('+')
+            options_screen.blit(self.background_image, (0, 0))
             font = pygame.font.Font(None, 150)
             string_rendered = font.render('OPTIONS', 1, pygame.Color('black'))
             intro_rect = string_rendered.get_rect()
@@ -299,11 +297,12 @@ class Play:
                         # прыжок на пробел
                         self.jump_flag = True
                         self.jump_num += 1
-                        if -20 < hero.jumpc < 20:
+                        if -hero.jump_h < hero.jumpc < hero.jump_h:
                             if self.jump_num < 3:
-                                hero.jumpc = 20
+                                hero.jumpc = hero.jump_h
             self.game_draw()
-            self.coins = self.score // 100
+            if self.score % 100 == 0:
+                self.coins += 1
             if self.jump_flag:
                 hero.jump()
             if self.over:
@@ -336,17 +335,15 @@ class Play:
         game_screen.blit(coin_string, coin_rect)
         game_screen.blit(coin_image, (surface.get_width() // 20, surface.get_height() // 20 * 2))
         # передвижение препятствий
-        for i in all_objects:
-            i.move()
         # отрисовка героя
         all_sprites.draw(game_screen)
         hero.move()
+        hero.update()
+        clock.tick(30)
         # обновление камеры
         camera.update(hero)
-        #for i in all_barriers:
-            #i.move_obstacle()
-        for elem in all_bonuses:
-            elem.move_obstacle()
+        for i in all_objects:
+            i.move_object()
         for sprite in all_sprites:
             camera.apply(sprite)
         self.point += 1
@@ -360,7 +357,6 @@ class Camera:
         self.height = height
         self.dx = 1
         self.dy = 1
-        self.speed = -1
 
     # сдвинуть объект obj на смещение камеры
     def apply(self, obj):
@@ -369,9 +365,8 @@ class Camera:
 
     # позиционировать камеру на объекте target
     def update(self, target):
-        #self.dx = len(all_barriers) * -1
+        self.dx = len(all_objects) * -1
         self.dy = 0
-        self.dx = len(all_bonuses) * self.speed
 
 
 # меню во время игры
@@ -516,46 +511,59 @@ FPS = 80
 
 # класс персонажа
 class Character(sprite.Sprite):
-    # установка спрайта
-    image = pygame.transform.scale(load_image('Probnik.png'), (200, 200))
-    # зеркалю картинку(просто пример не в ту сторону)
-    image = pygame.transform.flip(image, True, False)
-
     def __init__(self, skin, width, height):
         super().__init__(skin)
-        self.image = Character.image
-        self.rect = self.image.get_rect()
+        self.frames = []
+        self.cut_sheet(load_image("First skin.png"), 6, 1)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.rect = self.rect.move(x, y)
         self.ch_mask = pygame.mask.from_surface(self.image)
         self.rect.x = width // 2
-        self.jumpc = 20
-        self.rect.y = surface.get_height() // 10 * 7
+        self.jump_h = 20
+        self.jumpc = self.jump_h
+        self.rect.y = surface.get_height() // 10 * 7 - 20
         self.const = height - (height // 15) * 5 + 10
+        self.speed = 1
+        self.tank = False
 
     def move(self):
-        #for i in all_barriers:
-            #if not pygame.sprite.collide_mask(self, i):
-                #self.rect.x -= camera.speed
-                #game.score += 0.1
-            #elif self.rect.clip(i.rect).height < 50 and self.rect.bottom >= i.rect.bottom:
-                #game.jump_flag = False
-                #self.rect.bottom = i.rect.y
-                #self.rect.x -= camera.speed
-                #game.jump_num = 0
-            #elif self.rect.clip(i.rect).width > 0:
-                #game.over = True
-            pass
+        if self.tank:
+            for i in all_objects:
+                if not pygame.sprite.collide_mask(self, i):
+                    self.rect.x += self.speed
+                    game.score += 0.1
+                else:
+                    pass
+        else:
+            for i in all_objects:
+                if not pygame.sprite.collide_mask(self, i):
+                    self.rect.x += self.speed
+                    game.score += 0.1
+                else:
+                    i.rect.x = 20000
+                    i.function()
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
 
     # прыжок
     def jump(self):
-        if self.jumpc >= -20:
+        if self.jumpc >= -self.jump_h:
             self.rect.y -= self.jumpc
             self.jumpc -= 1
         else:
-            if self.rect.y < surface.get_height() // 10 * 7:
-                self.rect.y = min(surface.get_height() // 10 * 7, self.rect.y - self.jumpc)
+            if self.rect.y < surface.get_height() // 10 * 7 - 20:
+                self.rect.y = min(surface.get_height() // 10 * 7 - 20, self.rect.y - self.jumpc)
                 self.jumpc -= 1
             else:
-                self.jumpc = 20
+                self.jumpc = self.jump_h
                 game.jump_flag = False
                 game.jump_num = 0
 
@@ -566,6 +574,10 @@ class Character(sprite.Sprite):
             self.rect.y -= y_count
             self.rect.x -= x_count
             x_count -= 2
+
+    def update(self):
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = self.frames[self.cur_frame]
 
 
 # класс препятствий
@@ -579,66 +591,53 @@ class Obstacle(sprite.Sprite):
         self.y = y
         self.rect.x = x
         self.rect.y = y
+        self.speed = 5
 
-    def move_obstacle(self):
+    def move_object(self):
         if self.rect.x > -200:
-            self.rect.x -= 5
+            self.rect.x -= self.speed
         else:
             self.rect.x = self.x
             self.rect.y = self.y
+
+    def function(self):
+        game.over = True
 
 
 # будущий(уже настоящий) класс бонусов
-class Bonus(Obstacle):
-    def move_obstacle(self):
+class Bonus(sprite.Sprite):
+    def __init__(self, skin, x, y, image, func):
+        super().__init__(skin)
+        self.image = load_image(image)
+        self.rect = self.image.get_rect()
+        self.ob_mask = pygame.mask.from_surface(self.image)
+        self.x = x
+        self.y = y
+        self.func = func
+        self.rect.x = x
+        self.rect.y = y
+        self.speed = 5
+
+    def move_object(self):
         if self.rect.x > -200:
-            self.rect.x -= 5
+            self.rect.x -= self.speed
         else:
             self.rect.x = self.x
             self.rect.y = self.y
 
-        if not pygame.sprite.collide_mask(self, hero):
-            hero.rect.x -= camera.speed
-            game.score += 0.1
-        else:
-            Bonus.acceleration(self)
-
-    def acceleration(self):
-        camera.speed = -4
-
-    def deceleration(self):
-        if self.rect.x > -200:
-            self.rect.x -= 2
-        else:
-            self.rect.x = self.x
-            self.rect.y = self.y
-
-    def invincibility(self):
-        pass
+    def function(self):
+        if self.func == 'ускорение':
+            for i in all_objects:
+                i.speed += 5
+        elif self.func == 'танк':
+            hero.tank = True
+        elif self.func == 'высокие прыжки':
+            hero.jump_h = 25
+        elif self.func == 'деньги':
+            game.coins += 3
 
 
 all_sprites = sprite.Group()
-#all_barriers = []
-#all_barriers.append(Obstacle(all_sprites, surface.get_width() + random.randrange(100, 500),
-                             #surface.get_height() // 10 * 7,
-                             #'wrong_answer.png'))
-#all_barriers.append(Obstacle(all_sprites, surface.get_width() + random.randrange(100, 500) + 350,
-                             #random.randint(surface.get_height() // 10 * 3, surface.get_height() // 10 * 5),
-                             #'wrong_answer.png'))
-#all_barriers.append(Obstacle(all_sprites, surface.get_width() + random.randrange(100, 500) + 700,
-                             #random.randint(surface.get_height() // 10 * 6, surface.get_height() // 10 * 8),
-                             #'wrong_answer.png'))
-#all_barriers.append(Obstacle(all_sprites, surface.get_width() + random.randrange(100, 500) + 1050,
-                             #random.randint(surface.get_height() // 10, surface.get_height()),
-                             #'wrong_answer.png'))
-
-all_bonuses = []
-all_bonuses.append(Bonus(all_sprites, surface.get_width() + random.randrange(100, 500) + 350,
-                         random.randint(surface.get_height() // 10 * 3, surface.get_height() // 10 * 5),
-                         'First bonus.png'))
-
-all_objects = [Object(all_sprites, 'cloud1.png', random.randint(100, 600)),
-               Object(all_sprites, 'cloud2.png', random.randint(1000, 2000))]
 
 running = True
 options = Options(x, y)
