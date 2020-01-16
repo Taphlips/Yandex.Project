@@ -339,7 +339,6 @@ class Play:
         all_sprites.draw(game_screen)
         hero.move()
         hero.update()
-        clock.tick(30)
         # обновление камеры
         camera.update(hero)
         for i in all_objects:
@@ -513,12 +512,19 @@ FPS = 80
 class Character(sprite.Sprite):
     def __init__(self, skin, width, height):
         super().__init__(skin)
-        self.frames = []
-        self.cut_sheet(load_image("First skin.png"), 6, 1)
+
+        self.run_frames = []
+        self.cut_sheet(load_image("First skin.png"), 6, 1, 'r_f')
         self.cur_frame = 0
-        self.image = self.frames[self.cur_frame]
+        self.image = self.run_frames[self.cur_frame]
+
+        self.jump_frames = []
+        self.cut_sheet(load_image("Second skin.png"), 6, 1, 'j_f')
+
+        self.fall_frames = []
+        self.cut_sheet(load_image("Third skin.png"), 6, 1, 'f_f')
+
         self.rect = self.rect.move(x, y)
-        self.ch_mask = pygame.mask.from_surface(self.image)
         self.rect.x = width // 2
         self.jump_h = 20
         self.jumpc = self.jump_h
@@ -526,6 +532,9 @@ class Character(sprite.Sprite):
         self.const = height - (height // 15) * 5 + 10
         self.speed = 1
         self.tank = False
+        self.last_update = pygame.time.get_ticks()
+        self.frames = self.run_frames
+        self.flag = 'run'
 
     def move(self):
         if self.tank:
@@ -544,20 +553,32 @@ class Character(sprite.Sprite):
                     i.rect.x = 20000
                     i.function()
 
-    def cut_sheet(self, sheet, columns, rows):
+    def cut_sheet(self, sheet, columns, rows, name):
+        new = []
         self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
                                 sheet.get_height() // rows)
         for j in range(rows):
             for i in range(columns):
                 frame_location = (self.rect.w * i, self.rect.h * j)
-                self.frames.append(sheet.subsurface(pygame.Rect(
+                new.append(sheet.subsurface(pygame.Rect(
                     frame_location, self.rect.size)))
+
+        if name == 'r_f':
+            self.run_frames = new
+        elif name == 'j_f':
+            self.jump_frames = new
+        elif name == 'f_f':
+            self.fall_frames = new
 
     # прыжок
     def jump(self):
         if self.jumpc >= -self.jump_h:
             self.rect.y -= self.jumpc
             self.jumpc -= 1
+            if self.jumpc > 0:
+                self.frames = self.jump_frames
+            elif self.jumpc < 0:
+                self.frames = [self.fall_frames[5]]
         else:
             if self.rect.y < surface.get_height() // 10 * 7 - 20:
                 self.rect.y = min(surface.get_height() // 10 * 7 - 20, self.rect.y - self.jumpc)
@@ -566,6 +587,7 @@ class Character(sprite.Sprite):
                 self.jumpc = self.jump_h
                 game.jump_flag = False
                 game.jump_num = 0
+                self.frames = self.run_frames
 
     def jump_back(self):
         x_count = 20
@@ -576,8 +598,12 @@ class Character(sprite.Sprite):
             x_count -= 2
 
     def update(self):
-        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
-        self.image = self.frames[self.cur_frame]
+        now = pygame.time.get_ticks()
+        if now - self.last_update > 100:
+            self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+            self.image = self.frames[self.cur_frame]
+            self.ch_mask = pygame.mask.from_surface(self.image)
+            self.last_update = now
 
 
 # класс препятствий
