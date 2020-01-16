@@ -2,7 +2,6 @@
 import pygame, sys, os, random
 from pygame import sprite
 
-
 # инициализация pygame
 pygame.init()
 pygame.mixer.music.load("Sound.wav")
@@ -42,6 +41,7 @@ def restart(width, height):
     game.score = 0
     game.jump_num = 0
     game.dx = 0
+    game.coins = 0
     all_sprites = sprite.Group()
     hero = Character(all_sprites, surface.get_width() // 10 * 3, y)
     all_objects = []
@@ -333,6 +333,8 @@ class Play:
         # обновление фона
         game_screen.blit(self.background_image, (self.dx1, 0))
         game_screen.blit(self.background_image, (self.dx2, 0))
+        pygame.draw.rect(game_screen, (27, 24, 48),
+                         (0, surface.get_height() // 10 * 7 - 20 + 206, surface.get_width(), surface.get_height()))
         game_screen.blit(score_string, score_rect)
         game_screen.blit(coin_string, coin_rect)
         game_screen.blit(coin_image, (surface.get_width() // 20, surface.get_height() // 20 * 2))
