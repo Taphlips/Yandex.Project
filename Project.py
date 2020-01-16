@@ -41,6 +41,7 @@ def restart(width, height):
     game.jump_flag = False
     game.score = 0
     game.jump_num = 0
+    game.dx = 0
     all_sprites = sprite.Group()
     hero = Character(all_sprites, surface.get_width() // 10 * 3, y)
     all_objects = []
@@ -52,7 +53,7 @@ def restart(width, height):
                                 'wrong_answer.png'))
     all_objects.append(Bonus(all_sprites, surface.get_width() + random.randrange(100, 500) + 1050,
                              surface.get_height() // 10 * 8,
-                             'coin_bonuse.png', 'деньги'))
+                             'coin.png', 'деньги'))
 
 
 def boost():
@@ -282,6 +283,9 @@ class Play:
         self.over = False
         self.score = 0
         self.coins = 0
+        self.background_image = load_image("game_background_3.png")
+        self.dx1 = 0
+        self.dx2 = 1920
 
     def start(self):
         menu_screen.fill((255, 255, 255))
@@ -327,10 +331,8 @@ class Play:
         score_rect.x, score_rect.y = surface.get_width() // 20, surface.get_height() // 20
 
         # обновление фона
-        game_screen.fill(pygame.Color('aquamarine'), pygame.Rect(0, 0, self.width, self.height // 15 * 14))
-        game_screen.fill(pygame.Color('peru'), pygame.Rect(0, self.height // 15 * 14, self.width, self.height))
-        pygame.draw.circle(game_screen, pygame.Color('yellow'), (self.width // 15 * 13, self.height // 15 * 2),
-                           self.height // 10)
+        game_screen.blit(self.background_image, (self.dx1, 0))
+        game_screen.blit(self.background_image, (self.dx2, 0))
         game_screen.blit(score_string, score_rect)
         game_screen.blit(coin_string, coin_rect)
         game_screen.blit(coin_image, (surface.get_width() // 20, surface.get_height() // 20 * 2))
@@ -552,6 +554,14 @@ class Character(sprite.Sprite):
                 else:
                     i.rect.x = 20000
                     i.function()
+        game.dx1 -= 8
+        game.dx2 -= 8
+
+        if game.dx1 < -1920:
+            game.dx1 = 1920
+
+        if game.dx2 < -1920:
+            game.dx2 = 1920
 
     def cut_sheet(self, sheet, columns, rows, name):
         new = []
