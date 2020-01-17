@@ -55,28 +55,26 @@ def restart(width, height):
     game.coins = 0
     all_sprites = sprite.Group()
     hero = Character(all_sprites, surface.get_width() // 10 * 3, y)
-    all_objects = []
-    all_objects.append(Obstacle(all_sprites, surface.get_width() + 50,
-                                742, 'wrong_answer.png'))
-    all_objects.append(Obstacle(all_sprites, surface.get_width() + 150,
-                                792, 'wrong_answer2.png'))
-    all_objects.append(Obstacle(all_sprites, surface.get_width() + 800,
-                                742, 'wrong_answer.png'))
-    all_objects.append(Obstacle(all_sprites, surface.get_width() + 1500,
-                                792, 'wrong_answer2.png'))
-    all_objects.append(Bonus(all_sprites, surface.get_width() + 500,
-                             750, 'jump_boost.png', 'высокие прыжки'))
-    all_objects.append(Bonus(all_sprites, surface.get_width() + 2000,
-                             750, 'boost.png', 'ускорение'))
-    all_objects.append(Bonus(all_sprites, surface.get_width() + 3000,
-                             750, 'tank.png', 'танк'))
-    all_objects.append(Bonus(all_sprites, surface.get_width() + 4000,
-                             750, 'coin.png', 'деньги'))
+    all_objects = [Obstacle(all_sprites, surface.get_width() + 50,
+                            surface.get_height() // 10 * 7 - 14, 'wrong_answer.png'),
+                   Obstacle(all_sprites, surface.get_width() + 150,
+                            surface.get_height() // 10 * 7 + 36, 'wrong_answer2.png'),
+                   Obstacle(all_sprites, surface.get_width() + 800,
+                            surface.get_height() // 10 * 7 - 14, 'wrong_answer.png'),
+                   Obstacle(all_sprites, surface.get_width() + 1500,
+                            surface.get_height() // 10 * 7 + 36, 'wrong_answer2.png'),
+                   Bonus(all_sprites, surface.get_width() + 500,
+                         surface.get_height() // 10 * 7 - 30, 'jump_boost.png', 'высокие прыжки'),
+                   Bonus(all_sprites, surface.get_width() + 2000,
+                         surface.get_height() // 10 * 7 - 30, 'boost.png', 'ускорение'),
+                   Bonus(all_sprites, surface.get_width() + 3000,
+                         surface.get_height() // 10 * 7 - 30, 'tank.png', 'танк'),
+                   Bonus(all_sprites, surface.get_width() + 4000,
+                         surface.get_height() // 10 * 7 - 30, 'coin.png', 'деньги')]
 
 
 def rad(array):
-    maxi = max(array[0].rect.x, array[1].rect.x, array[2].rect.x, array[3].rect.x, array[4].rect.x,
-               array[5].rect.x, array[6].rect.x, array[7].rect.x)
+    maxi = max(array[0].rect.x, array[1].rect.x, array[2].rect.x, array[3].rect.x)
     if maxi < surface.get_width():
         rad = surface.get_width()
         if rad - maxi < 250:
@@ -674,6 +672,7 @@ class Character(sprite.Sprite):
         self.new_time = 0
         self.bns = ''
         self.fon_speed = 13
+        self.hight_jump = False
 
     def move(self):
         if self.tank:
@@ -793,7 +792,7 @@ class Obstacle(sprite.Sprite):
         self.rect.x = rad
 
 
-# будущий(уже настоящий) класс бонусов
+# класс бонусов
 class Bonus(sprite.Sprite):
     def __init__(self, skin, x, y, image, func):
         super().__init__(skin)
@@ -819,12 +818,13 @@ class Bonus(sprite.Sprite):
         if self.func == 'ускорение':
             for i in all_objects:
                 i.speed += 5
+            hero.fon_speed += 5
             name = 'speed'
         elif self.func == 'танк':
             hero.tank = True
             name = 'Tank'
         elif self.func == 'высокие прыжки':
-            hero.jump_h = 27
+            hero.jump_h = 26
             name = 'high_jumps'
         elif self.func == 'деньги':
             game.coins += 3
@@ -837,6 +837,7 @@ class Bonus(sprite.Sprite):
         if name == 'speed':
             for i in all_objects:
                 i.speed -= 5
+            hero.fon_speed -= 5
         elif name == 'Tank':
             hero.tank = False
         elif name == 'high_jumps':
