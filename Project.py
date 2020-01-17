@@ -64,7 +64,7 @@ def restart(width, height):
                                 'wrong_answer.png'))
     all_objects.append(Bonus(all_sprites, surface.get_width() + random.randrange(100, 500) + 1050,
                              surface.get_height() // 10 * 8,
-                             'coin.png', 'деньги'))
+                             'boost.png', 'ускорение'))
 
 
 def boost():
@@ -659,6 +659,8 @@ class Character(sprite.Sprite):
         self.last_update = pygame.time.get_ticks()
         self.frames = self.run_frames
         self.flag = 'run'
+        self.new_time = 0
+        self.bns = ''
 
     def move(self):
         if self.tank:
@@ -676,6 +678,8 @@ class Character(sprite.Sprite):
                 else:
                     i.rect.x = 20000
                     i.function()
+                    self.bns = i
+
         game.dx1 -= 8
         game.dx2 -= 8
 
@@ -684,6 +688,15 @@ class Character(sprite.Sprite):
 
         if game.dx2 < -1920:
             game.dx2 = 1920
+
+        # проверка на наличие и длительность бонуса
+        if self.bns != '' and type(self.bns) == Bonus:
+            if self.bns.flag[0] is True:
+                self.new_time = pygame.time.get_ticks()
+                if self.new_time - self.bns.last_update > 5000:
+                    name = self.bns.flag[1]
+                    self.bns.flag = [False, name]
+                    self.bns.anti(name)
 
     def cut_sheet(self, sheet, columns, rows, name):
         new = []
@@ -777,6 +790,7 @@ class Bonus(sprite.Sprite):
         self.rect.x = x
         self.rect.y = y
         self.speed = 5
+        self.flag = [False, 'kek']
 
     def move_object(self):
         if self.rect.x > -200:
@@ -789,12 +803,30 @@ class Bonus(sprite.Sprite):
         if self.func == 'ускорение':
             for i in all_objects:
                 i.speed += 5
+            name = 'speed'
         elif self.func == 'танк':
             hero.tank = True
+            name = 'Tank'
         elif self.func == 'высокие прыжки':
             hero.jump_h = 25
+            name = 'high_jumps'
         elif self.func == 'деньги':
             game.coins += 3
+            name = 'coins'
+        self.flag = [True, name]
+        self.last_update = pygame.time.get_ticks()
+
+    # метод отката бонуса
+    def anti(self, name):
+        if name == 'speed':
+            for i in all_objects:
+                i.speed -= 5
+        elif name == 'Tank':
+            hero.tank = False
+        elif name == 'high_jumps':
+            hero.jump_h = 20
+        hero.bns = ''
+
 
 
 all_sprites = sprite.Group()
