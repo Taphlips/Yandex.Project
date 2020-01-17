@@ -56,36 +56,49 @@ def restart(width, height):
     all_sprites = sprite.Group()
     hero = Character(all_sprites, surface.get_width() // 10 * 3, y)
     all_objects = []
-    all_objects.append(Obstacle(all_sprites, surface.get_width() + random.randrange(100, 500),
-                                random.randrange(surface.get_height() // 15 * 5, surface.get_height() // 15 * 12),
-                                'wrong_answer.png'))
-    all_objects.append(Obstacle(all_sprites, surface.get_width() + random.randrange(100, 500) + 350,
-                                random.randrange(surface.get_height() // 15 * 5, surface.get_height() // 15 * 12),
-                                'wrong_answer.png'))
-    all_objects.append(Bonus(all_sprites, surface.get_width() + random.randrange(100, 500) + 1050,
-                             surface.get_height() // 10 * 8,
-                             'boost.png', 'ускорение'))
+    all_objects.append(Obstacle(all_sprites, surface.get_width() + 50,
+                                742, 'wrong_answer.png'))
+    all_objects.append(Obstacle(all_sprites, surface.get_width() + 150,
+                                792, 'wrong_answer2.png'))
+    all_objects.append(Obstacle(all_sprites, surface.get_width() + 800,
+                                742, 'wrong_answer.png'))
+    all_objects.append(Obstacle(all_sprites, surface.get_width() + 1500,
+                                792, 'wrong_answer2.png'))
+    all_objects.append(Bonus(all_sprites, surface.get_width() + 500,
+                             750, 'jump_boost.png', 'высокие прыжки'))
+    all_objects.append(Bonus(all_sprites, surface.get_width() + 2000,
+                             750, 'boost.png', 'ускорение'))
+    all_objects.append(Bonus(all_sprites, surface.get_width() + 3000,
+                             750, 'tank.png', 'танк'))
+    all_objects.append(Bonus(all_sprites, surface.get_width() + 4000,
+                             750, 'coin.png', 'деньги'))
 
 
-def boost():
-    for i in all_objects:
-        i.speed += 1
+def rad(array):
+    maxi = max(array[0].rect.x, array[1].rect.x, array[2].rect.x, array[3].rect.x, array[4].rect.x,
+               array[5].rect.x, array[6].rect.x, array[7].rect.x)
+    if maxi < surface.get_width():
+        rad = surface.get_width()
+        if rad - maxi < 250:
+            rad += 100
+    else:
+        rad = maxi
+
+    ch = random.randint(0, 4)
+    if ch == 0:
+        rad += random.randrange(100, 150)
+    else:
+        rad += random.randrange(100, 200)
+
+    return rad
 
 
-class Object(sprite.Sprite):
-    def __init__(self, skin, image, dx):
-        super().__init__(skin)
-        self.dx = dx
-        self.image = load_image(image)
-        self.rect = self.image.get_rect()
-        self.rect.x = surface.get_width() + self.dx
-        self.rect.y = surface.get_height() // 10 * 2
-
-    def move(self):
-        if self.rect.x > -260:
-            self.rect = self.rect.move(-0.5, 0)
-        else:
-            self.rect.x = surface.get_width() + self.dx
+def draw_objects(array):
+    for o in array:
+        check = o.move_object()
+        if not check:
+            radius = rad(array)
+            o.move(radius)
 
 
 # Класс, создающий кнопку в указанный координатах
@@ -221,7 +234,7 @@ class Options:
         pos_x = width // 10 * 3
         pos_y = height // 10 * 3
         self.first = Button('yellow_back_btn.png', 'blue_back_btn.png', options_screen, pos_x, pos_y,
-                           int(1.5 * size), 7 * size, "Billy Talent - Red Flag")
+                            int(1.5 * size), 7 * size, "Billy Talent - Red Flag")
 
         pos_x = width // 10 * 3
         pos_y = height // 10 * 5
@@ -231,7 +244,7 @@ class Options:
         pos_x = width // 10 * 3
         pos_y = height // 10 * 7
         self.third = Button('yellow_back_btn.png', 'blue_back_btn.png', options_screen, pos_x, pos_y,
-                             int(1.5 * size), 7 * size, "Eminem - Not Afraid")
+                            int(1.5 * size), 7 * size, "Eminem - Not Afraid")
 
         self.background_image = load_image('game_background_1.png')
 
@@ -430,8 +443,7 @@ class Play:
         hero.update()
         # обновление камеры
         camera.update(hero)
-        for i in all_objects:
-            i.move_object()
+        draw_objects(all_objects)
         for sprite in all_sprites:
             camera.apply(sprite)
         self.point += 1
@@ -650,7 +662,7 @@ class Character(sprite.Sprite):
 
         self.rect = self.rect.move(x, y)
         self.rect.x = width // 2
-        self.jump_h = 20
+        self.jump_h = 23
         self.jumpc = self.jump_h
         self.rect.y = surface.get_height() // 10 * 7 - 20
         self.const = height - (height // 15) * 5 + 10
@@ -661,6 +673,7 @@ class Character(sprite.Sprite):
         self.flag = 'run'
         self.new_time = 0
         self.bns = ''
+        self.fon_speed = 13
 
     def move(self):
         if self.tank:
@@ -676,12 +689,12 @@ class Character(sprite.Sprite):
                     self.rect.x += self.speed
                     game.score += 0.1
                 else:
-                    i.rect.x = 20000
+                    i.rect.x = 2000
                     i.function()
                     self.bns = i
 
-        game.dx1 -= 8
-        game.dx2 -= 8
+        game.dx1 -= self.fon_speed
+        game.dx2 -= self.fon_speed
 
         if game.dx1 < -1920:
             game.dx1 = 1920
@@ -769,12 +782,15 @@ class Obstacle(sprite.Sprite):
     def move_object(self):
         if self.rect.x > -200:
             self.rect.x -= self.speed
+            return True
         else:
-            self.rect.x = self.x
-            self.rect.y = self.y
+            return False
 
     def function(self):
         game.over = True
+
+    def move(self, rad):
+        self.rect.x = rad
 
 
 # будущий(уже настоящий) класс бонусов
@@ -795,9 +811,9 @@ class Bonus(sprite.Sprite):
     def move_object(self):
         if self.rect.x > -200:
             self.rect.x -= self.speed
+            return True
         else:
-            self.rect.x = self.x
-            self.rect.y = self.y
+            return False
 
     def function(self):
         if self.func == 'ускорение':
@@ -808,7 +824,7 @@ class Bonus(sprite.Sprite):
             hero.tank = True
             name = 'Tank'
         elif self.func == 'высокие прыжки':
-            hero.jump_h = 25
+            hero.jump_h = 27
             name = 'high_jumps'
         elif self.func == 'деньги':
             game.coins += 3
@@ -824,9 +840,11 @@ class Bonus(sprite.Sprite):
         elif name == 'Tank':
             hero.tank = False
         elif name == 'high_jumps':
-            hero.jump_h = 20
+            hero.jump_h = 23
         hero.bns = ''
 
+    def move(self, rad):
+        self.rect.x = rad
 
 
 all_sprites = sprite.Group()
