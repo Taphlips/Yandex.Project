@@ -1,12 +1,23 @@
 # импорт необходимых модулей
-import pygame, sys, os, random
+import pygame, sys, os, random, sqlite3
 from pygame import sprite
+
+# изъятие громкости из базы данных, чтобы подстроиться под пользователя
+con = sqlite3.connect('For project.db')
+cur = con.cursor()
+result = cur.execute("""SELECT Loudness FROM Players
+                            WHERE Nickname = 'Player'""").fetchall()
+song_result = cur.execute("""SELECT Song FROM Players
+                            WHERE Nickname = 'Player'""").fetchall()
+result = result[0][0]
+song_result = song_result[0][0]
+con.close()
 
 # инициализация pygame
 pygame.init()
-pygame.mixer.music.load("Sound.wav")
+pygame.mixer.music.load(song_result)
 click_sound = pygame.mixer.Sound('Click_sound.wav')
-pygame.mixer.music.set_volume(0.5)
+pygame.mixer.music.set_volume(result * 0.1)
 pygame.mixer.music.play(-1, 0.0)
 
 
@@ -121,7 +132,7 @@ class Button:
 class Menu:
     def __init__(self, width, height):
         self.music_flag = True
-        self.snd_level = 5
+        self.snd_level = result
         self.width = width
         self.height = height
         # Создание кнопок с помощью класса Button
@@ -181,6 +192,13 @@ class Menu:
 # Класс настроек
 class Options:
     def __init__(self, width, height):
+        if song_result == 'Sound.wav':
+            self.song = 'Billy'
+        elif song_result == 'Sound 2.wav':
+            self.song = 'Slipknot'
+        elif song_result == 'Sound 3.wav':
+            self.song = 'Eminem'
+
         self.snd_flag = False
         self.width = width
         self.height = height
@@ -189,14 +207,31 @@ class Options:
         pos_x = height - pos_y - size
         self.back_to_menu = Button('yellow_back_btn.png', 'blue_back_btn.png', options_screen, pos_x, pos_y,
                                    size, size, "<")
+
         pos_x = width // 10 * 9
         pos_y = height // 10 * 7
         self.less = Button('yellow_back_btn.png', 'blue_back_btn.png', options_screen, pos_x, pos_y,
                            size, size, "-")
+
         pos_x = width // 10 * 9
         pos_y = height // 10 * 3
         self.more = Button('yellow_back_btn.png', 'blue_back_btn.png', options_screen, pos_x, pos_y,
                            size, size, "+")
+
+        pos_x = width // 10 * 3
+        pos_y = height // 10 * 3
+        self.first = Button('yellow_back_btn.png', 'blue_back_btn.png', options_screen, pos_x, pos_y,
+                           int(1.5 * size), 7 * size, "Billy Talent - Red Flag")
+
+        pos_x = width // 10 * 3
+        pos_y = height // 10 * 5
+        self.second = Button('yellow_back_btn.png', 'blue_back_btn.png', options_screen, pos_x, pos_y,
+                             int(1.5 * size), 7 * size, "Slipknot - Psychosocial")
+
+        pos_x = width // 10 * 3
+        pos_y = height // 10 * 7
+        self.third = Button('yellow_back_btn.png', 'blue_back_btn.png', options_screen, pos_x, pos_y,
+                             int(1.5 * size), 7 * size, "Eminem - Not Afraid")
 
         self.background_image = load_image('game_background_1.png')
 
@@ -227,6 +262,18 @@ class Options:
                               self.more.y < mp[1] < self.more.y + self.more.height):
                             click_sound.play()
                             self.loudness('+')
+                        elif (self.first.x < mp[0] < self.first.x + self.first.width and
+                              self.first.y < mp[1] < self.first.y + self.first.height):
+                            click_sound.play()
+                            self.change('Billy')
+                        elif (self.second.x < mp[0] < self.second.x + self.second.width and
+                              self.second.y < mp[1] < self.second.y + self.second.height):
+                            click_sound.play()
+                            self.change('Slipknot')
+                        elif (self.third.x < mp[0] < self.third.x + self.third.width and
+                              self.third.y < mp[1] < self.third.y + self.third.height):
+                            click_sound.play()
+                            self.change('Eminem')
             options_screen.blit(self.background_image, (0, 0))
             font = pygame.font.Font(None, 150)
             string_rendered = font.render('OPTIONS', 1, pygame.Color('black'))
@@ -236,6 +283,9 @@ class Options:
             self.back_to_menu.draw()
             self.less.draw()
             self.more.draw()
+            self.first.draw()
+            self.second.draw()
+            self.third.draw()
             menu_screen.blit(options_screen, (0, 0))
             if menu.snd_level == 0:
                 self.pic_sound('No sound.png', 10)
@@ -263,6 +313,15 @@ class Options:
             pygame.mixer.music.set_volume(snd_lev / 10)
         menu.snd_level = snd_lev
 
+        # обновление громкости в бд
+        con = sqlite3.connect('For project.db')
+        cur = con.cursor()
+        cur.execute("""UPDATE Players
+                            SET Loudness = ?
+                            WHERE Nickname = 'Player'""", (snd_lev,))
+        con.commit()
+        con.close()
+
     def pic_sound(self, name, divide):
         self.image = pygame.transform.scale(load_image(name), (self.width // divide, self.width // 10))
         self.rect = self.image.get_rect()
@@ -270,6 +329,32 @@ class Options:
         self.rect.y = 0
         options_screen.blit(self.image, (self.rect.x, self.rect.y))
         self.snd_flag = True
+
+    # смена песни
+    def change(self, name):
+        if name != self.song:
+            pygame.mixer.music.stop()
+            if name == 'Billy':
+                self.song = 'Billy'
+                song_result = 'Sound.wav'
+                pygame.mixer.music.load("Sound.wav")
+            elif name == 'Slipknot':
+                self.song = 'Slipknot'
+                song_result = 'Sound 2.wav'
+                pygame.mixer.music.load("Sound 2.wav")
+            elif name == 'Eminem':
+                self.song = 'Eminem'
+                song_result = 'Sound 3.wav'
+                pygame.mixer.music.load("Sound 3.wav")
+            pygame.mixer.music.play(-1, 0.0)
+
+            con = sqlite3.connect('For project.db')
+            cur = con.cursor()
+            cur.execute("""UPDATE Players
+                                    SET Song = ?
+                                    WHERE Nickname = 'Player'""", (song_result,))
+            con.commit()
+            con.close()
 
 
 # класс игры
@@ -459,11 +544,15 @@ class Game_Over_menu:
                         if (self.exit_button.x < mp[0] < self.exit_button.x + self.exit_button.width and
                                 self.exit_button.y < mp[1] < self.exit_button.y + self.exit_button.height):
                             click_sound.play()
+                            self.salary()
+                            self.record()
                             terminate()
                         # по кнопке "Заново"
                         elif (self.restart_button.x < mp[0] < self.restart_button.x + self.restart_button.width and
                               self.restart_button.y < mp[1] < self.restart_button.y + self.restart_button.height):
                             click_sound.play()
+                            self.salary()
+                            self.record()
                             menu_running = False
                             restart(x, y)
                             game.start()
@@ -471,6 +560,8 @@ class Game_Over_menu:
                         elif (self.to_menu.x < mp[0] < self.to_menu.x + self.to_menu.width and
                               self.to_menu.y < mp[1] < self.to_menu.y + self.to_menu.height):
                             click_sound.play()
+                            self.salary()
+                            self.record()
                             menu_running = False
                             game.over = False
                             menu_screen.fill((255, 255, 255))
@@ -491,6 +582,35 @@ class Game_Over_menu:
             self.exit_button.draw()
             pygame.display.flip()
             clock.tick(FPS)
+
+    def salary(self):
+        # добавление денег к существущей сумме(пока не для чего - только в планах)
+        con = sqlite3.connect('For project.db')
+        cur = con.cursor()
+        coins = cur.execute("""SELECT Coins FROM Players
+                                WHERE Nickname = 'Player'""").fetchall()
+        coins = coins[0][0]
+        coins += game.coins
+        cur.execute("""UPDATE Players
+                        SET Coins = ?
+                        WHERE Nickname = 'Player'""", (coins,))
+        con.commit()
+        con.close()
+
+    def record(self):
+        # записывание наибольшего количества очков в таблицу
+        con = sqlite3.connect('For project.db')
+        cur = con.cursor()
+        points = cur.execute("""SELECT Record FROM Players
+                                WHERE Nickname = 'Player'""").fetchall()
+        points = points[0][0]
+        if points < int(game.score):
+            points = int(game.score)
+            cur.execute("""UPDATE Players
+                            SET Record = ?
+                            WHERE Nickname = 'Player'""", (points,))
+            con.commit()
+        con.close()
 
 
 # Название окна
@@ -609,9 +729,11 @@ class Character(sprite.Sprite):
             self.rect.x -= x_count
             x_count -= 2
 
+    # обновление кадров
     def update(self):
         now = pygame.time.get_ticks()
-        if now - self.last_update > 100:
+        # частота обновления анимации героя
+        if now - self.last_update > 80:
             self.cur_frame = (self.cur_frame + 1) % len(self.frames)
             self.image = self.frames[self.cur_frame]
             self.ch_mask = pygame.mask.from_surface(self.image)
