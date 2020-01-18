@@ -211,7 +211,7 @@ class Options:
             self.song = 'Billy'
         elif song_result == 'Sound 2.wav':
             self.song = 'Slipknot'
-        elif song_result == 'Sound 3.wav':
+        elif song_result == 'Психободун.wav':
             self.song = 'Eminem'
 
         self.snd_flag = False
@@ -246,7 +246,7 @@ class Options:
         pos_x = width // 10 * 3
         pos_y = height // 10 * 7
         self.third = Button('yellow_back_btn.png', 'blue_back_btn.png', options_screen, pos_x, pos_y,
-                            int(1.5 * size), 7 * size, "Eminem - Not Afraid")
+                            int(1.5 * size), 7 * size, "Не включать(включать)")
 
         self.background_image = load_image('game_background_1.png')
 
@@ -359,8 +359,8 @@ class Options:
                 pygame.mixer.music.load("Sound 2.wav")
             elif name == 'Eminem':
                 self.song = 'Eminem'
-                song_result = 'Sound 3.wav'
-                pygame.mixer.music.load("Sound 3.wav")
+                song_result = 'Психободун.wav'
+                pygame.mixer.music.load("Психободун.wav")
             pygame.mixer.music.play(-1, 0.0)
 
             con = sqlite3.connect('For project.db')
