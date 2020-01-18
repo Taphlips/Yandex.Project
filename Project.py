@@ -53,6 +53,10 @@ def restart(width, height):
     game.jump_num = 0
     game.dx = 0
     game.coins = 0
+    game.active_bonuses = 0
+    game.jump_boost = False
+    game.boost = False
+    game.tank = False
     all_sprites = sprite.Group()
     hero = Character(all_sprites, surface.get_width() // 10 * 3, y)
     all_objects = [Obstacle(all_sprites, surface.get_width() + 50,
@@ -63,11 +67,11 @@ def restart(width, height):
                             surface.get_height() // 10 * 7 - 14, 'wrong_answer.png'),
                    Obstacle(all_sprites, surface.get_width() + 1500,
                             surface.get_height() // 10 * 7 + 36, 'wrong_answer2.png'),
-                   Bonus(all_sprites, surface.get_width() + 500,
+                   Bonus(all_sprites, surface.get_width() + 3200,
                          surface.get_height() // 10 * 7 - 30, 'jump_boost.png', 'высокие прыжки'),
                    Bonus(all_sprites, surface.get_width() + 2000,
                          surface.get_height() // 10 * 7 - 30, 'boost.png', 'ускорение'),
-                   Bonus(all_sprites, surface.get_width() + 3000,
+                   Bonus(all_sprites, surface.get_width() + 500,
                          surface.get_height() // 10 * 7 - 30, 'tank.png', 'танк'),
                    Bonus(all_sprites, surface.get_width() + 4000,
                          surface.get_height() // 10 * 7 - 30, 'coin.png', 'деньги')]
@@ -86,7 +90,7 @@ def rad(array):
     if ch == 0:
         rad += random.randrange(100, 150)
     else:
-        rad += random.randrange(100, 200)
+        rad += random.randrange(200, 300)
 
     return rad
 
@@ -383,6 +387,17 @@ class Play:
         self.dx1 = 0
         self.dx2 = 1920
 
+        self.active_bonuses = 0
+
+        self.jump_boost = False
+        self.jump_image = load_image('jump_boost.png')
+
+        self.boost = False
+        self.boost_image = load_image('boost.png')
+
+        self.tank = False
+        self.tank_image = load_image('tank.png')
+
     def start(self):
         menu_screen.fill((255, 255, 255))
         game_running = True
@@ -430,10 +445,24 @@ class Play:
         game_screen.blit(self.background_image, (self.dx1, 0))
         game_screen.blit(self.background_image, (self.dx2, 0))
         pygame.draw.rect(game_screen, (27, 24, 48),
-                         (0, surface.get_height() // 10 * 7 - 20 + 206, surface.get_width(), surface.get_height()))
+                         (0, surface.get_height() // 10 * 7 + 186, surface.get_width(), surface.get_height()))
         game_screen.blit(score_string, score_rect)
         game_screen.blit(coin_string, coin_rect)
         game_screen.blit(coin_image, (surface.get_width() // 20, surface.get_height() // 20 * 2))
+        if self.active_bonuses == 1:
+            if self.boost:
+                game_screen.blit(self.boost_image, (surface.get_width() // 20, surface.get_height() // 20 * 3.5))
+            if self.jump_boost:
+                game_screen.blit(self.jump_image, (surface.get_width() // 20, surface.get_height() // 20 * 3.5))
+            if self.tank:
+                game_screen.blit(self.tank_image, (surface.get_width() // 20, surface.get_height() // 20 * 3.5))
+        else:
+            if self.boost:
+                game_screen.blit(self.boost_image, (surface.get_width() // 20, surface.get_height() // 20 * 3.5))
+            if self.jump_boost:
+                game_screen.blit(self.jump_image, (surface.get_width() // 20 + 80, surface.get_height() // 20 * 3.5))
+            if self.tank:
+                game_screen.blit(self.tank_image, (surface.get_width() // 20 + 160, surface.get_height() // 20 * 3.5))
         # передвижение препятствий
         # отрисовка героя
         all_sprites.draw(game_screen)
@@ -478,9 +507,15 @@ class Game_Menu:
         se_pos = self.height // 10 * 3
         self.continue_button = Button('menu_btn.png', 'menu_btn_act.png', menu_screen, fi_pos, se_pos,
                                       70, 300, 'Продолжить')
+
         se_pos += increment
         self.restart_button = Button('menu_btn.png', 'menu_btn_act.png', menu_screen, fi_pos, se_pos,
                                      70, 300, 'Заново')
+
+        se_pos += increment
+        self.menu_button = Button('menu_btn.png', 'menu_btn_act.png', menu_screen, fi_pos, se_pos,
+                                  70, 300, 'Главное меню')
+
         se_pos += increment
         self.exit_button = Button('menu_btn.png', 'menu_btn_act.png', menu_screen, fi_pos, se_pos,
                                   70, 300, 'Выход')
@@ -510,17 +545,25 @@ class Game_Menu:
                               self.continue_button.y < mp[1] < self.continue_button.y + self.continue_button.height):
                             click_sound.play()
                             return
+                        elif (self.menu_button.x < mp[0] < self.menu_button.x + self.menu_button.width and
+                              self.menu_button.y < mp[1] < self.menu_button.y + self.menu_button.height):
+                            click_sound.play()
+                            menu_running = False
+                            game.over = False
+                            menu_screen.fill((255, 255, 255))
+                            menu.start()
                 if event.type == pygame.KEYDOWN:
                     if event.key == 27:
                         return
             font = pygame.font.Font(None, 150)
             string_rendered = font.render('Пауза', 1, pygame.Color('black'))
             intro_rect = string_rendered.get_rect()
-            intro_rect.center = self.width // 2, 100
+            intro_rect.x, intro_rect.y = self.width // 10 * 4, 100
             menu_screen.blit(string_rendered, intro_rect)
             self.continue_button.draw()
             self.restart_button.draw()
             self.exit_button.draw()
+            self.menu_button.draw()
             pygame.display.flip()
             clock.tick(FPS)
 
@@ -532,7 +575,7 @@ class Game_Over_menu:
 
         x = self.width // 10 * 4
         increment = self.height // 10
-        y = self.height // 10 * 3
+        y = self.height // 10 * 4
         self.restart_button = Button('menu_btn.png', 'menu_btn_act.png', menu_screen, x, y,
                                      70, 300, 'Заново')
         y += increment
@@ -579,14 +622,20 @@ class Game_Over_menu:
             font = pygame.font.Font(None, 150)
             string_rendered = font.render('Игра окончена', 1, pygame.Color('red'))
             font2 = pygame.font.Font(None, 80)
-            # Строка с результатом (по очкам)(сделай пж такую же, только про монеты)
-            score_string = font2.render('Результат: ' + str(int(game.score)), 1, pygame.Color('black'))
+            # Строка с результатом (по очкам)
+            score_string = font2.render(f'Результат: {str(int(game.score))}', 1, pygame.Color('red'))
+            coin_string = font2.render(
+                f'Монет собрано: {str(int(game.coins))} + монеты за очки: {str(int(game.score // 100))}', 1,
+                pygame.Color('red'))
             intro_rect = string_rendered.get_rect()
             intro_rect.center = self.width // 2, 100
             score_rect = score_string.get_rect()
             score_rect.center = self.width // 2, 220
+            coin_rect = coin_string.get_rect()
+            coin_rect.center = self.width // 2, 340
             menu_screen.blit(string_rendered, intro_rect)
             menu_screen.blit(score_string, score_rect)
+            menu_screen.blit(coin_string, coin_rect)
             self.to_menu.draw()
             self.restart_button.draw()
             self.exit_button.draw()
@@ -672,7 +721,6 @@ class Character(sprite.Sprite):
         self.new_time = 0
         self.bns = ''
         self.fon_speed = 13
-        self.hight_jump = False
 
     def move(self):
         if self.tank:
@@ -681,7 +729,8 @@ class Character(sprite.Sprite):
                     self.rect.x += self.speed
                     game.score += 0.1
                 else:
-                    pass
+                    self.rect.x += self.speed
+                    game.score += 0.1
         else:
             for i in all_objects:
                 if not pygame.sprite.collide_mask(self, i):
@@ -806,6 +855,7 @@ class Bonus(sprite.Sprite):
         self.rect.y = y
         self.speed = 5
         self.flag = [False, 'kek']
+        self.rect.bottom = surface.get_height() // 10 * 7 + 186
 
     def move_object(self):
         if self.rect.x > -200:
@@ -817,15 +867,25 @@ class Bonus(sprite.Sprite):
     def function(self):
         if self.func == 'ускорение':
             for i in all_objects:
-                i.speed += 5
-            hero.fon_speed += 5
+                i.speed += 3
+            hero.fon_speed += 3
             name = 'speed'
+            game.active_bonuses += 1
+            game.boost = True
         elif self.func == 'танк':
             hero.tank = True
             name = 'Tank'
+            game.active_bonuses += 1
+            game.tank = True
         elif self.func == 'высокие прыжки':
-            hero.jump_h = 26
-            name = 'high_jumps'
+            if not game.jump_flag:
+                hero.jump_h = 26
+                name = 'high_jumps'
+                game.active_bonuses += 1
+                game.jump_boost = True
+            else:
+                name = 'high_jumps'
+                game.jump_boost = True
         elif self.func == 'деньги':
             game.coins += 3
             name = 'coins'
@@ -836,12 +896,18 @@ class Bonus(sprite.Sprite):
     def anti(self, name):
         if name == 'speed':
             for i in all_objects:
-                i.speed -= 5
-            hero.fon_speed -= 5
+                i.speed -= 3
+            hero.fon_speed -= 3
+            game.active_bonuses -= 1
+            game.boost = False
         elif name == 'Tank':
             hero.tank = False
+            game.active_bonuses -= 1
+            game.tank = False
         elif name == 'high_jumps':
             hero.jump_h = 23
+            game.active_bonuses -= 1
+            game.jump_boost = False
         hero.bns = ''
 
     def move(self, rad):
